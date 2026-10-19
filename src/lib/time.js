@@ -24,8 +24,14 @@ export function humanMS(ms) {
   return s === 0 ? m + " dk" : m + " dk " + s + " sn";
 }
 
-// For the day total, minutes only: "135 dk"
-export const human = (ms) => minutesOf(ms) + " dk";
+// For the day total, whole hours + remaining minutes: "2 sa 15 dk", "2 sa", "45 dk", "0 dk"
+export function human(ms) {
+  const total = minutesOf(ms);
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  if (h === 0) return m + " dk";
+  return m === 0 ? h + " sa" : h + " sa " + m + " dk";
+}
 
 export const hourMinute = (ts) =>
   new Date(ts).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
