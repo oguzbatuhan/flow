@@ -7,7 +7,7 @@ React + Tailwind CSS ile yapılmış çalışma süresi sayacı (kullanıcıya g
 - **Başlat / Duraklat / Devam / Bitir.** Sayaç dakika:saniye olarak gösterilir (ör. `75:30`), saat yoktur. Bir saniyeden kısa denemeler kaydedilmez. Süre zaman damgalarından hesaplanır; sekme arka planda kalsa, ekran kilitlense ya da sayfa yenilense bile doğru kalır. Yenilenince sayaç kaldığı yerden devam eder. Çalışırken yalnızca iki nokta yavaşça sönüp yanar.
 - **Büyük ekran.** Sayacı ekrana ölçekli, ince rakamlarla gösterir; 100 dakikayı geçince rakamlar kendiliğinden küçülüp sığar. Tarayıcı destekliyorsa gerçek tam ekrana geçer. Tam ekrandan `Esc` ile ya da sağ üstteki ✕ ile çıkılır.
 - **Ekran açık kalır.** Süre işlerken (ve büyük ekran açıkken) Screen Wake Lock API ile ekranın kapanması engellenir. Chrome ve Edge'de çalışır; iPhone'da Safari 16.4 ve üzeri destekler.
-- **Günlere göre kayıt.** Bir oturum, başladığı günün altına kaydedilir. Gece yarısını aşan çalışma başladığı güne yazılır. Duraklamalar süreden düşülür. Kayıt satırları dakika ve saniye ("50 dk 12 sn"), günün toplamı yalnızca dakika ("115 dk") olarak görünür.
+- **Günlere göre kayıt.** Bir oturum, başladığı günün altına kaydedilir. Gece yarısını aşan çalışma başladığı güne yazılır. Duraklamalar süreden düşülür. Kayıt satırları dakika ve saniye ("50 dk 12 sn"), günün toplamı saat ve dakika ("1 sa 55 dk") olarak görünür.
 - **Silme.** Her kayıtta çöp kutusu vardır, silmeden önce onay ister.
 - **Drive eşitleme.** Görevlerim uygulamasıyla aynı yöntem: kayıtlar Drive'daki gizli uygulama klasörüne `flow.json` olarak yazılır.
 

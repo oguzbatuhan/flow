@@ -22,10 +22,12 @@ test("humanMS: session row", () => {
   assert.equal(humanMS(3 * 3600000 + 5 * 60000), "185 dk");
 });
 
-test("human: day total in minutes only", () => {
+test("human: day total in hours and minutes", () => {
   assert.equal(human(0), "0 dk");
   assert.equal(human(59000), "0 dk");
-  assert.equal(human(2 * 3600000 + 15 * 60000 + 59000), "135 dk");
+  assert.equal(human(45 * 60000), "45 dk");
+  assert.equal(human(2 * 3600000), "2 sa");
+  assert.equal(human(2 * 3600000 + 15 * 60000 + 59000), "2 sa 15 dk");
   assert.equal(minutesOf(3725000), 62);
 });
 
