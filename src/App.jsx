@@ -60,9 +60,11 @@ export default function App() {
 
   return (
     <main className="mx-auto w-full max-w-md">
-      <header className="mb-8">
-        <h1 className="text-xl font-medium tracking-tight">Akış</h1>
-        <p className="tabular mt-0.5 text-sm text-[var(--muted)]">Bugün {human(todayGroup ? todayGroup.total : 0)}</p>
+      <header className="mb-8 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl font-medium tracking-tight">Akış</h1>
+          <p className="tabular mt-0.5 text-sm text-[var(--muted)]">Bugün {human(todayGroup ? todayGroup.total : 0)}</p>
+        </div>
         <SyncBar sync={sync} />
       </header>
 
