@@ -187,9 +187,19 @@
   }
 }
 
+/* Soft reveal when a past day is opened: rows fade in while sliding down a few pixels (same as the task app) */
+@keyframes task-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+.task-in { animation: task-in 0.45s ease-out; }
+
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;
+  }
+  .task-in {
+    animation: none !important;
   }
   .digits .colon.running {
     animation: none;

@@ -9,6 +9,20 @@ export function TrashIcon() {
   );
 }
 
+// Small arrow used by the day open/close button (same icon as in the task app)
+export function ChevronIcon({ dir = "down" }) {
+  const d = {
+    left: "M11 3.5L5.5 9l5.5 5.5",
+    right: "M7 3.5L12.5 9 7 14.5",
+    down: "M3.5 6.5L9 12l5.5-5.5",
+  }[dir];
+  return (
+    <svg width="16" height="16" viewBox="0 0 18 18" {...base}>
+      <path d={d} strokeWidth="2" {...stroke} />
+    </svg>
+  );
+}
+
 export function ExpandIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 18 18" {...base}>

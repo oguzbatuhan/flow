@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import SyncBar from "./components/SyncBar.jsx";
 import TimerCard from "./components/TimerCard.jsx";
 import BigClock from "./components/BigClock.jsx";
-import { GroupHead, SessionRow } from "./components/SessionRow.jsx";
+import { DayToggle, GroupHead, SessionRow } from "./components/SessionRow.jsx";
 import { useDriveSync } from "./hooks/useDriveSync.js";
 import { useStopwatch } from "./hooks/useStopwatch.js";
 import { useWakeLock } from "./hooks/useWakeLock.js";
@@ -55,6 +55,16 @@ export default function App() {
   const todayGroup = groups.find((g) => g.date === today);
   const shown = groups.slice(0, dayLimit);
 
+  // Past days start closed; today is always open. Open state is per day, so when midnight
+  // passes, the day that was "today" simply falls back to closed.
+  const [openDays, setOpenDays] = useState(() => new Set());
+  const toggleDay = (date) =>
+    setOpenDays((prev) => {
+      const next = new Set(prev);
+      next.has(date) ? next.delete(date) : next.add(date);
+      return next;
+    });
+
   const remove = (id) =>
     setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, deleted: true, updatedAt: Date.now() } : s)));
 
@@ -78,18 +88,24 @@ export default function App() {
         <div className="flex flex-col gap-9">
           {shown.map((g) => {
             const label = groupLabel(g.date, today);
+            const isToday = g.date === today;
+            // Today is always open; past days are open only after the user taps "Kayıtlar"
+            const open = isToday || openDays.has(g.date);
             return (
               <section key={g.date}>
                 <GroupHead primary={label.primary} secondary={label.secondary} total={human(g.total)} />
+                {!isToday && g.items.length > 0 ? (
+                  <DayToggle count={g.items.length} open={open} onToggle={() => toggleDay(g.date)} />
+                ) : null}
                 {g.items.length === 0 ? (
                   <p className="py-3 text-sm text-[var(--muted)]">Bugün henüz kayıt yok.</p>
-                ) : (
+                ) : open ? (
                   <ul>
                     {g.items.map((s) => (
-                      <SessionRow key={s.id} session={s} onRemove={remove} />
+                      <SessionRow key={s.id} session={s} onRemove={remove} reveal={!isToday} />
                     ))}
                   </ul>
-                )}
+                ) : null}
               </section>
             );
           })}

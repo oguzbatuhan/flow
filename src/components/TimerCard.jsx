@@ -35,13 +35,13 @@ export default function TimerCard({ sw, wake, onBig }) {
         : "bg-[var(--line-strong)]";
 
   return (
-    <section
-      aria-label="Akış"
-      className="mb-10 border-b border-[var(--line)] pb-10 text-center"
-    >
+    <section aria-label="Akış" className="pb-5 text-center">
       <div className="flex h-9 items-center justify-between">
         <p className="flex items-center gap-2 text-sm text-[var(--muted)]">
-          <span className={"h-1.5 w-1.5 rounded-full " + dot} aria-hidden="true"></span>
+          <span
+            className={"h-1.5 w-1.5 rounded-full " + dot}
+            aria-hidden="true"
+          ></span>
           <span role="status">{STATUS_TEXT[sw.status]}</span>
         </p>
         <button
@@ -69,24 +69,42 @@ export default function TimerCard({ sw, wake, onBig }) {
           confirming ? (
             <>
               <span>Kaydedilmeden silinsin mi?</span>
-              <button ref={cancelRef} type="button" onClick={() => setConfirming(false)} className="btn btn-ghost btn-sm">
+              <button
+                ref={cancelRef}
+                type="button"
+                onClick={() => setConfirming(false)}
+                className="btn btn-ghost btn-sm"
+              >
                 Vazgeç
               </button>
-              <button type="button" onClick={sw.discard} className="btn btn-warn btn-sm">
+              <button
+                type="button"
+                onClick={sw.discard}
+                className="btn btn-warn btn-sm"
+              >
                 Sil
               </button>
             </>
           ) : (
-            <button type="button" onClick={() => setConfirming(true)} className="link-btn">
+            <button
+              type="button"
+              onClick={() => setConfirming(true)}
+              className="link-btn"
+            >
               Kaydetmeden sil
             </button>
           )
         ) : sw.status === "running" ? (
           wake.supported ? (
-            <span>{wake.held ? "Ekran açık kalıyor" : "Ekranın açık kalması için sayfayı açık tut"}</span>
+            <span>
+              {wake.held
+                ? "Ekran açık kalıyor"
+                : "Ekranın açık kalması için sayfayı açık tut"}
+            </span>
           ) : (
             <span className="text-[var(--warn)]">
-              Bu tarayıcı ekranı açık tutamıyor. Telefonun ekran zaman aşımını uzat.
+              Bu tarayıcı ekranı açık tutamıyor. Telefonun ekran zaman aşımını
+              uzat.
             </span>
           )
         ) : null}
