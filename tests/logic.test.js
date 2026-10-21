@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { clockMS, human, humanMS, minutesOf, MIN_SESSION_MS } from "../src/lib/time.js";
 import { groupLabel, toIso } from "../src/lib/dates.js";
-import { groupByDay, mergeSessions, normalizeSessions } from "../src/lib/sessions.js";
+import { cleanTag, groupByDay, mergeSessions, normalizeSessions, newSession, recentTags } from "../src/lib/sessions.js";
 
 test("clockMS: minutes and seconds, no hours", () => {
   assert.equal(clockMS(0), "00:00");
@@ -31,36 +31,37 @@ test("human: day total in hours and minutes", () => {
   assert.equal(minutesOf(3725000), 62);
 });
 
-test("minimum session is 1 second", () => {
-  assert.equal(MIN_SESSION_MS, 1000);
+test("minimum session is 1 minute", () => {
+  assert.equal(MIN_SESSION_MS, 60000);
 });
 
+const M = 60000;
 const s = (id, date, ms, updatedAt = 1, extra = {}) => ({
   id, date, start: Date.parse(date + "T10:00:00"), end: Date.parse(date + "T11:00:00"), ms, deleted: false, updatedAt, ...extra,
 });
 
 test("grouping by day and totals", () => {
-  const list = [s("a", "2026-10-17", 1000), s("b", "2026-10-18", 2000), s("c", "2026-10-18", 3000), s("d", "2026-10-18", 9999, 1, { deleted: true })];
+  const list = [s("a", "2026-10-17", 1 * M), s("b", "2026-10-18", 2 * M), s("c", "2026-10-18", 3 * M), s("d", "2026-10-18", 9 * M, 1, { deleted: true }), s("e", "2026-10-18", 30000)];
   const g = groupByDay(list, "2026-10-18");
   assert.deepEqual(g.map((x) => x.date), ["2026-10-18", "2026-10-17"]);
-  assert.equal(g[0].total, 5000);
+  assert.equal(g[0].total, 5 * M);
   assert.equal(g[0].items.length, 2);
 });
 
 test("today is listed even without sessions", () => {
-  const g = groupByDay([s("a", "2026-10-10", 1000)], "2026-10-18");
+  const g = groupByDay([s("a", "2026-10-10", M)], "2026-10-18");
   assert.equal(g[0].date, "2026-10-18");
   assert.equal(g[0].total, 0);
 });
 
 test("sync: latest change wins, deletion flag carries over", () => {
   const T = Date.now();
-  const local = [s("a", "2026-10-18", 1000, T + 5), s("b", "2026-10-18", 2000, T + 1)];
-  const remote = [s("a", "2026-10-18", 1000, T + 9, { deleted: true }), s("c", "2026-10-17", 3000, T + 2)];
+  const local = [s("a", "2026-10-18", M, T + 5), s("b", "2026-10-18", 2 * M, T + 1)];
+  const remote = [s("a", "2026-10-18", M, T + 9, { deleted: true }), s("c", "2026-10-17", 3 * M, T + 2)];
   const merged = mergeSessions(local, remote);
   assert.equal(merged.length, 3);
   assert.equal(merged.find((x) => x.id === "a").deleted, true);
-  assert.equal(groupByDay(merged, "2026-10-18").reduce((n, g) => n + g.total, 0), 5000);
+  assert.equal(groupByDay(merged, "2026-10-18").reduce((n, g) => n + g.total, 0), 5 * M);
 });
 
 test("deletion flags older than 30 days are purged", () => {
@@ -79,4 +80,15 @@ test("day heading", () => {
   assert.equal(groupLabel("2026-10-17", "2026-10-18").primary, "Dün");
   assert.equal(groupLabel("2026-10-13", "2026-10-18").primary, "Salı");
   assert.equal(toIso(new Date(2026, 9, 5)), "2026-10-05");
+});
+
+test("tags: cleaned, stored on sessions and listed by recency", () => {
+  assert.equal(cleanTag("  Matematik   çalışma "), "Matematik çalışma");
+  assert.equal(cleanTag("x".repeat(50)).length, 30);
+  assert.equal(cleanTag(undefined), "");
+  assert.equal(newSession({ date: "2026-10-18", start: 1, end: 2, ms: M, tag: " Kod " }).tag, "Kod");
+  // Old records without a tag load as untagged
+  assert.equal(normalizeSessions([s("o", "2026-10-18", M)])[0].tag, "");
+  const list = [s("a", "2026-10-17", M, 1, { tag: "Kod", start: 1 }), s("b", "2026-10-18", M, 1, { tag: "Matematik", start: 5 }), s("c", "2026-10-18", M, 1, { tag: "kod", start: 9 }), s("d", "2026-10-18", M, 1, { start: 10 })];
+  assert.deepEqual(recentTags(list), ["kod", "Matematik"]);
 });

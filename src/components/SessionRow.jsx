@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronIcon, TrashIcon } from "./Icons.jsx";
-import { humanMS, hourMinute } from "../lib/time.js";
+import { hourMinute, human } from "../lib/time.js";
 
 // Day heading: the day on the left, that day's total on the right
 export function GroupHead({ primary, secondary, total }) {
@@ -36,77 +36,88 @@ export function DayToggle({ count, open, onToggle }) {
 
 const CONFIRM_MS = 5000;
 
+// A record shows what was worked on (tag) and how long. Tapping it reveals the delete button.
 // reveal: play the soft fade-in (used for rows of past days that were just opened)
 export function SessionRow({ session, onRemove, reveal = false }) {
-  const [confirming, setConfirming] = useState(false);
+  // "closed" | "open" (delete button visible) | "confirm" (asking "Silinsin mi?")
+  const [mode, setMode] = useState("closed");
   const cancelRef = useRef(null);
-  const trashRef = useRef(null);
-  const wasConfirming = useRef(false);
+  const delRef = useRef(null);
+  const prevMode = useRef("closed");
 
-  // When confirmation is asked, focus moves to the safe option; if untouched it cancels itself
+  // Focus the safe option when confirmation is asked; if untouched it goes back to "open"
   useEffect(() => {
-    if (confirming) {
-      wasConfirming.current = true;
+    if (mode === "confirm") {
       if (cancelRef.current) cancelRef.current.focus();
-      const id = setTimeout(() => setConfirming(false), CONFIRM_MS);
+      const id = setTimeout(() => setMode("open"), CONFIRM_MS);
       return () => clearTimeout(id);
     }
-    if (wasConfirming.current) {
-      wasConfirming.current = false;
-      if (trashRef.current) trashRef.current.focus();
-    }
-  }, [confirming]);
+    if (mode === "open" && prevMode.current === "confirm" && delRef.current) delRef.current.focus();
+  }, [mode]);
+  useEffect(() => {
+    prevMode.current = mode;
+  });
 
-  const row = "flex min-h-[3.25rem] items-center gap-3 " + (reveal ? "task-in " : "");
-  const range = hourMinute(session.start) + " – " + hourMinute(session.end);
-
-  if (confirming) {
-    return (
-      <li
-        className={row}
-        role="alertdialog"
-        aria-label={"Silme onayı: " + range}
-      >
-        <p className="min-w-0 flex-1">
-          Silinsin mi?{" "}
-          <span className="tabular text-[var(--muted)]">
-            {humanMS(session.ms)}
-          </span>
-        </p>
-        <button
-          ref={cancelRef}
-          type="button"
-          onClick={() => setConfirming(false)}
-          className="btn btn-ghost btn-sm"
-        >
-          Vazgeç
-        </button>
-        <button
-          type="button"
-          onClick={() => onRemove(session.id)}
-          className="btn btn-warn btn-sm"
-        >
-          Sil
-        </button>
-      </li>
-    );
-  }
+  const label = session.tag || "Etiketsiz";
+  const open = mode !== "closed";
 
   return (
-    <li className={row}>
-      <span className="tabular min-w-0 flex-1 text-[var(--muted)]">
-        {range}
-      </span>
-      <span className="tabular font-medium">{humanMS(session.ms)}</span>
-      <button
-        ref={trashRef}
-        type="button"
-        onClick={() => setConfirming(true)}
-        aria-label={"Sil: " + range}
-        className="icon-btn -mr-2"
+    <li className={reveal ? "task-in" : undefined}>
+      <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={open}
+        aria-label={label + ", " + human(session.ms)}
+        onClick={() => setMode(open ? "closed" : "open")}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setMode(open ? "closed" : "open");
+          }
+        }}
+        className="-mx-2 flex min-h-[3.25rem] cursor-pointer items-center gap-3 rounded-xl px-2 transition-colors hover:bg-[var(--hover)]"
       >
-        <TrashIcon />
-      </button>
+        <span
+          className={
+            "min-w-0 flex-1 truncate " +
+            (session.tag ? "font-medium" : "text-[var(--muted)]")
+          }
+        >
+          {label}
+        </span>
+        <span className="tabular text-[var(--muted)]">{human(session.ms)}</span>
+      </div>
+
+      {open ? (
+        <div className="task-in flex min-h-[2.5rem] items-center gap-2 pb-2">
+          {mode === "confirm" ? (
+            <div role="alertdialog" aria-label={"Silme onayı: " + label} className="flex w-full items-center gap-2">
+              <span className="flex-1 text-sm">Silinsin mi?</span>
+              <button ref={cancelRef} type="button" onClick={() => setMode("open")} className="btn btn-ghost btn-sm">
+                Vazgeç
+              </button>
+              <button type="button" onClick={() => onRemove(session.id)} className="btn btn-warn btn-sm">
+                Sil
+              </button>
+            </div>
+          ) : (
+            <>
+              <span className="tabular min-w-0 flex-1 text-sm text-[var(--muted)]">
+                {hourMinute(session.start) + " – " + hourMinute(session.end)}
+              </span>
+              <button
+                ref={delRef}
+                type="button"
+                onClick={() => setMode("confirm")}
+                className="btn btn-sm min-w-0 gap-1.5 border-[var(--line-strong)] text-[var(--warn)] hover:bg-[var(--hover)]"
+              >
+                <TrashIcon />
+                Sil
+              </button>
+            </>
+          )}
+        </div>
+      ) : null}
     </li>
   );
 }

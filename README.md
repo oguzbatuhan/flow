@@ -4,10 +4,11 @@ React + Tailwind CSS ile yapılmış çalışma süresi sayacı (kullanıcıya g
 
 ## Özellikler
 
-- **Başlat / Duraklat / Devam / Bitir.** Sayaç dakika:saniye olarak gösterilir (ör. `75:30`), saat yoktur. Bir saniyeden kısa denemeler kaydedilmez. Süre zaman damgalarından hesaplanır; sekme arka planda kalsa, ekran kilitlense ya da sayfa yenilense bile doğru kalır. Yenilenince sayaç kaldığı yerden devam eder. Çalışırken yalnızca iki nokta yavaşça sönüp yanar.
+- **Başlat / Duraklat / Devam / Bitir.** Sayaç dakika:saniye olarak gösterilir (ör. `75:30`), saat yoktur. Bir dakikadan kısa çalışmalar kaydedilmez. Süre zaman damgalarından hesaplanır; sekme arka planda kalsa, ekran kilitlense ya da sayfa yenilense bile doğru kalır. Yenilenince sayaç kaldığı yerden devam eder. Çalışırken yalnızca iki nokta yavaşça sönüp yanar.
 - **Büyük ekran.** Sayacı ekrana ölçekli, ince rakamlarla gösterir; 100 dakikayı geçince rakamlar kendiliğinden küçülüp sığar. Tarayıcı destekliyorsa gerçek tam ekrana geçer. Tam ekrandan `Esc` ile ya da sağ üstteki ✕ ile çıkılır.
 - **Ekran açık kalır.** Süre işlerken (ve büyük ekran açıkken) Screen Wake Lock API ile ekranın kapanması engellenir. Chrome ve Edge'de çalışır; iPhone'da Safari 16.4 ve üzeri destekler.
-- **Günlere göre kayıt.** Bir oturum, başladığı günün altına kaydedilir. Gece yarısını aşan çalışma başladığı güne yazılır. Duraklamalar süreden düşülür. Kayıt satırları dakika ve saniye ("50 dk 12 sn"), günün toplamı saat ve dakika ("1 sa 55 dk") olarak görünür.
+- **Günlere göre kayıt.** Bir oturum, başladığı günün altına kaydedilir. Gece yarısını aşan çalışma başladığı güne yazılır. Duraklamalar süreden düşülür. Kayıt satırları çalışılan etiketi ve süreyi saat ve dakika olarak ("1 sa 25 dk"), günün toplamı da aynı biçimde gösterir; saat aralığı ve saniye gösterilmez. Bir kayda dokununca altında çalışılan saat aralığı ve **Sil** düğmesi açılır.
+- **Etiket.** Sayacın altındaki alana ne üzerinde çalıştığını yaz (ör. Matematik). Son kullanılan etiketler tek dokunuşla seçilebilir; etiket kayıtla birlikte saklanır.
 - **Silme.** Her kayıtta çöp kutusu vardır, silmeden önce onay ister.
 - **Drive eşitleme.** Görevlerim uygulamasıyla aynı yöntem: kayıtlar Drive'daki gizli uygulama klasörüne `flow.json` olarak yazılır.
 

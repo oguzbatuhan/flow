@@ -1,3 +1,5 @@
+import { MIN_SESSION_MS } from "./time.js";
+
 export const STORAGE_KEY = "flow-sessions-v1";
 
 // Deleted sessions are not removed right away; they are kept for a while with a "deleted" flag
@@ -9,9 +11,13 @@ export function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
 }
 
+export const MAX_TAG_LENGTH = 30;
+export const cleanTag = (v) => (typeof v === "string" ? v.trim().replace(/\s+/g, " ").slice(0, MAX_TAG_LENGTH) : "");
+
 // date: day the session started (YYYY-MM-DD) · start/end: timestamps · ms: net duration with pauses removed
-export function newSession({ date, start, end, ms }) {
-  return { id: uid(), date, start, end, ms, deleted: false, updatedAt: Date.now() };
+// tag: what was worked on ("" when untagged)
+export function newSession({ date, start, end, ms, tag = "" }) {
+  return { id: uid(), date, start, end, ms, tag: cleanTag(tag), deleted: false, updatedAt: Date.now() };
 }
 
 export function normalizeSessions(list) {
@@ -31,6 +37,7 @@ export function normalizeSessions(list) {
       start: Number(s.start) || 0,
       end: Number(s.end) || 0,
       ms: Number(s.ms),
+      tag: cleanTag(s.tag),
       deleted: Boolean(s.deleted),
       updatedAt: Number(s.updatedAt) || 0,
     }));
@@ -66,7 +73,8 @@ export function mergeSessions(local, remote) {
 export function groupByDay(sessions, today) {
   const map = new Map();
   for (const s of sessions) {
-    if (s.deleted) continue;
+    // Deleted sessions and (old) sessions shorter than one minute are not shown
+    if (s.deleted || s.ms < MIN_SESSION_MS) continue;
     if (!map.has(s.date)) map.set(s.date, []);
     map.get(s.date).push(s);
   }
@@ -77,4 +85,16 @@ export function groupByDay(sessions, today) {
       const sorted = [...items].sort((a, b) => b.start - a.start);
       return { date, items: sorted, total: sorted.reduce((n, s) => n + s.ms, 0) };
     });
+}
+
+// Most recently used distinct tags, newest first
+export function recentTags(sessions, limit = 6) {
+  const seen = new Map();
+  for (const s of sessions) {
+    if (s.deleted || !s.tag || s.ms < MIN_SESSION_MS) continue;
+    const key = s.tag.toLocaleLowerCase("tr");
+    const prev = seen.get(key);
+    if (!prev || s.start > prev.start) seen.set(key, { tag: s.tag, start: s.start });
+  }
+  return [...seen.values()].sort((a, b) => b.start - a.start).slice(0, limit).map((x) => x.tag);
 }

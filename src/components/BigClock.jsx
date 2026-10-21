@@ -12,7 +12,7 @@ const STATUS_TEXT = {
 
 // Full-screen big counter. Uses real fullscreen when the browser supports it,
 // otherwise (e.g. iPhone Safari) it opens as an overlay covering the page.
-export default function BigClock({ sw, wake, onClose }) {
+export default function BigClock({ sw, wake, tag, onClose }) {
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
   const enteredFullscreen = useRef(false);
@@ -93,7 +93,12 @@ export default function BigClock({ sw, wake, onClose }) {
         </button>
       </div>
 
-      <div className="flex flex-1 items-center justify-center">
+      <div className="flex flex-1 flex-col items-center justify-center gap-4">
+        {tag ? (
+          <p className="max-w-full truncate rounded-full bg-[var(--accent-soft)] px-3.5 py-1 text-sm font-medium text-[var(--accent)]">
+            {tag}
+          </p>
+        ) : null}
         <Digits ms={sw.elapsed} running={sw.status === "running"} className="select-none" style={{ fontSize }} />
       </div>
 

@@ -1,5 +1,5 @@
-// Shorter durations are not recorded (accidental starts)
-export const MIN_SESSION_MS = 1000;
+// Sessions shorter than one minute are not recorded (accidental starts)
+export const MIN_SESSION_MS = 60000;
 
 export const pad = (n) => String(n).padStart(2, "0");
 

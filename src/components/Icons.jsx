@@ -75,3 +75,17 @@ export function UnlinkIcon() {
     </svg>
   );
 }
+
+export function TagIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 18 18" {...base}>
+      <path
+        d="M2.5 9.2V3.5a1 1 0 011-1h5.7a1 1 0 01.7.3l6 6a1 1 0 010 1.4l-5.4 5.4a1 1 0 01-1.4 0l-6-6a1 1 0 01-.6-.4z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <circle cx="6.2" cy="6.2" r="1.1" fill="currentColor" />
+    </svg>
+  );
+}

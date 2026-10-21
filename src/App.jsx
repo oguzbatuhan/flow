@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import SyncBar from "./components/SyncBar.jsx";
 import TimerCard from "./components/TimerCard.jsx";
 import BigClock from "./components/BigClock.jsx";
@@ -7,10 +7,11 @@ import { useDriveSync } from "./hooks/useDriveSync.js";
 import { useStopwatch } from "./hooks/useStopwatch.js";
 import { useWakeLock } from "./hooks/useWakeLock.js";
 import { groupLabel, toIso } from "./lib/dates.js";
-import { STORAGE_KEY, groupByDay, loadSessions, newSession } from "./lib/sessions.js";
+import { STORAGE_KEY, cleanTag, groupByDay, loadSessions, newSession, recentTags } from "./lib/sessions.js";
 import { clockMS, human } from "./lib/time.js";
 
 const FIRST_PAGE_DAYS = 14;
+const TAG_KEY = "flow-tag-v1";
 
 export default function App() {
   const [today, setToday] = useState(() => toIso(new Date()));
@@ -19,9 +20,26 @@ export default function App() {
   const [dayLimit, setDayLimit] = useState(FIRST_PAGE_DAYS);
   const sync = useDriveSync(sessions, setSessions);
 
+  // Tag of the work in progress; kept in this browser so it survives reloads and is reused next time
+  const [tag, setTagState] = useState(() => {
+    try {
+      return cleanTag(localStorage.getItem(TAG_KEY) || "");
+    } catch {
+      return "";
+    }
+  });
+  const tagRef = useRef(tag);
+  tagRef.current = tag;
+  const setTag = (v) => {
+    setTagState(v);
+    try {
+      localStorage.setItem(TAG_KEY, v);
+    } catch {}
+  };
+
   // When the timer finishes, the session is saved under the day it started
   const sw = useStopwatch(({ start, end, ms }) => {
-    const session = newSession({ date: toIso(new Date(start)), start, end, ms });
+    const session = newSession({ date: toIso(new Date(start)), start, end, ms, tag: tagRef.current });
     setSessions((prev) => [...prev, session]);
   });
   // Keep the screen on while running (and while the big view is open)
@@ -52,6 +70,7 @@ export default function App() {
 
   const groups = useMemo(() => groupByDay(sessions, today), [sessions, today]);
   const hasAny = useMemo(() => sessions.some((s) => !s.deleted), [sessions]);
+  const tags = useMemo(() => recentTags(sessions), [sessions]);
   const todayGroup = groups.find((g) => g.date === today);
   const shown = groups.slice(0, dayLimit);
 
@@ -78,7 +97,7 @@ export default function App() {
         <SyncBar sync={sync} />
       </header>
 
-      <TimerCard sw={sw} wake={wake} onBig={() => setBig(true)} />
+      <TimerCard sw={sw} wake={wake} tag={tag} onTag={setTag} tags={tags} onBig={() => setBig(true)} />
 
       {!hasAny ? (
         <p className="py-6 text-center text-sm text-[var(--muted)]">
@@ -119,7 +138,7 @@ export default function App() {
         </div>
       )}
 
-      {big ? <BigClock sw={sw} wake={wake} onClose={() => setBig(false)} /> : null}
+      {big ? <BigClock sw={sw} wake={wake} tag={tag} onClose={() => setBig(false)} /> : null}
     </main>
   );
 }

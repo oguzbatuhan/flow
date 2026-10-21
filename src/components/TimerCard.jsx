@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import Controls from "./Controls.jsx";
 import Digits from "./Digits.jsx";
-import { ExpandIcon } from "./Icons.jsx";
+import { ExpandIcon, TagIcon } from "./Icons.jsx";
+import { MAX_TAG_LENGTH, cleanTag } from "../lib/sessions.js";
 
 const CONFIRM_MS = 5000;
 
@@ -11,7 +12,7 @@ const STATUS_TEXT = {
   paused: "Duraklatıldı",
 };
 
-export default function TimerCard({ sw, wake, onBig }) {
+export default function TimerCard({ sw, wake, tag, onTag, tags, onBig }) {
   const [confirming, setConfirming] = useState(false);
   const cancelRef = useRef(null);
 
@@ -58,9 +59,54 @@ export default function TimerCard({ sw, wake, onBig }) {
       <Digits
         ms={sw.elapsed}
         running={sw.status === "running"}
-        className="my-7"
+        className="mb-5 mt-7"
         style={{ fontSize: "clamp(3rem, 15vw, 4rem)" }}
       />
+
+      <div className="mb-6">
+        <label className="mx-auto flex h-10 max-w-[15rem] items-center gap-2 rounded-full border border-[var(--line-strong)] bg-[var(--surface)] px-4 text-[var(--muted)] transition-colors focus-within:border-[var(--accent)]">
+          <TagIcon />
+          <input
+            type="text"
+            value={tag}
+            onChange={(e) => onTag(e.target.value.slice(0, MAX_TAG_LENGTH))}
+            onBlur={() => onTag(cleanTag(tag))}
+            maxLength={MAX_TAG_LENGTH}
+            autoComplete="off"
+            enterKeyHint="done"
+            aria-label="Etiket"
+            placeholder="Etiket (ör. Matematik)"
+            className="min-w-0 flex-1 bg-transparent text-center text-[0.875rem] text-[var(--fg)] outline-none placeholder:text-[var(--muted)]"
+          />
+        </label>
+        {tags.length > 0 ? (
+          <div
+            className="mt-2.5 flex flex-wrap justify-center gap-1.5"
+            role="group"
+            aria-label="Son kullanılan etiketler"
+          >
+            {tags.map((t) => {
+              const on = t.toLocaleLowerCase("tr") === tag.trim().toLocaleLowerCase("tr");
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => onTag(on ? "" : t)}
+                  className={
+                    "h-7 max-w-[10rem] truncate rounded-full border px-3 text-xs font-medium transition-colors " +
+                    (on
+                      ? "border-transparent bg-[var(--accent-soft)] text-[var(--accent)]"
+                      : "border-[var(--line-strong)] text-[var(--muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)]")
+                  }
+                >
+                  {t}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+      </div>
 
       <Controls sw={sw} />
 
