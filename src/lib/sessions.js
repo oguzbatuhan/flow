@@ -98,3 +98,34 @@ export function recentTags(sessions, limit = 6) {
   }
   return [...seen.values()].sort((a, b) => b.start - a.start).slice(0, limit).map((x) => x.tag);
 }
+
+// The tag of the work in progress is synced too: { value, updatedAt }. The latest change wins.
+export const TAG_KEY = "flow-tag-v1";
+
+export function normalizeTag(t) {
+  if (typeof t === "string") return { value: cleanTag(t), updatedAt: 0 }; // old format: plain string
+  if (t && typeof t === "object") return { value: cleanTag(t.value), updatedAt: Number(t.updatedAt) || 0 };
+  return { value: "", updatedAt: 0 };
+}
+
+export function loadTag() {
+  try {
+    const raw = localStorage.getItem(TAG_KEY);
+    if (!raw) return normalizeTag(null);
+    try {
+      return normalizeTag(JSON.parse(raw));
+    } catch {
+      return normalizeTag(raw);
+    }
+  } catch {
+    return normalizeTag(null);
+  }
+}
+
+export function mergeTag(local, remote) {
+  const a = normalizeTag(local);
+  const b = normalizeTag(remote);
+  return b.updatedAt > a.updatedAt ? b : a;
+}
+
+export const sameTag = (a, b) => a.value === b.value && a.updatedAt === b.updatedAt;

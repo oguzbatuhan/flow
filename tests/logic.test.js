@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { clockMS, human, humanMS, minutesOf, MIN_SESSION_MS } from "../src/lib/time.js";
 import { groupLabel, toIso } from "../src/lib/dates.js";
-import { cleanTag, groupByDay, mergeSessions, normalizeSessions, newSession, recentTags } from "../src/lib/sessions.js";
+import { cleanTag, groupByDay, mergeSessions, mergeTag, normalizeSessions, normalizeTag, newSession, recentTags } from "../src/lib/sessions.js";
 
 test("clockMS: minutes and seconds, no hours", () => {
   assert.equal(clockMS(0), "00:00");
@@ -91,4 +91,14 @@ test("tags: cleaned, stored on sessions and listed by recency", () => {
   assert.equal(normalizeSessions([s("o", "2026-10-18", M)])[0].tag, "");
   const list = [s("a", "2026-10-17", M, 1, { tag: "Kod", start: 1 }), s("b", "2026-10-18", M, 1, { tag: "Matematik", start: 5 }), s("c", "2026-10-18", M, 1, { tag: "kod", start: 9 }), s("d", "2026-10-18", M, 1, { start: 10 })];
   assert.deepEqual(recentTags(list), ["kod", "Matematik"]);
+});
+
+test("tag sync: latest change wins, old plain-string format is accepted", () => {
+  const local = { value: "Matematik", updatedAt: 100 };
+  const remote = { value: "Fizik", updatedAt: 200 };
+  assert.equal(mergeTag(local, remote).value, "Fizik");
+  assert.equal(mergeTag(remote, local).value, "Fizik");
+  assert.equal(mergeTag(local, undefined).value, "Matematik");
+  assert.deepEqual(normalizeTag("  Kimya "), { value: "Kimya", updatedAt: 0 });
+  assert.equal(mergeTag("Eski", { value: "", updatedAt: 5 }).value, "");
 });

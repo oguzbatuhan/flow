@@ -7,35 +7,39 @@ import { useDriveSync } from "./hooks/useDriveSync.js";
 import { useStopwatch } from "./hooks/useStopwatch.js";
 import { useWakeLock } from "./hooks/useWakeLock.js";
 import { groupLabel, toIso } from "./lib/dates.js";
-import { STORAGE_KEY, cleanTag, groupByDay, loadSessions, newSession, recentTags } from "./lib/sessions.js";
+import {
+  STORAGE_KEY,
+  TAG_KEY,
+  cleanTag,
+  groupByDay,
+  loadSessions,
+  loadTag,
+  newSession,
+  recentTags,
+} from "./lib/sessions.js";
 import { clockMS, human } from "./lib/time.js";
 
 const FIRST_PAGE_DAYS = 14;
-const TAG_KEY = "flow-tag-v1";
 
 export default function App() {
   const [today, setToday] = useState(() => toIso(new Date()));
   const [sessions, setSessions] = useState(loadSessions);
   const [big, setBig] = useState(false);
   const [dayLimit, setDayLimit] = useState(FIRST_PAGE_DAYS);
-  const sync = useDriveSync(sessions, setSessions);
-
-  // Tag of the work in progress; kept in this browser so it survives reloads and is reused next time
-  const [tag, setTagState] = useState(() => {
-    try {
-      return cleanTag(localStorage.getItem(TAG_KEY) || "");
-    } catch {
-      return "";
-    }
-  });
+  // Tag of the work in progress ({ value, updatedAt }); kept in this browser and synced through Drive
+  const [tagState, setTagState] = useState(loadTag);
+  const tag = tagState.value;
   const tagRef = useRef(tag);
   tagRef.current = tag;
-  const setTag = (v) => {
-    setTagState(v);
+  const setTag = (v) =>
+    setTagState((prev) => (prev.value === v ? prev : { value: v, updatedAt: Date.now() }));
+  useEffect(() => {
     try {
-      localStorage.setItem(TAG_KEY, v);
+      localStorage.setItem(TAG_KEY, JSON.stringify(tagState));
     } catch {}
-  };
+  }, [tagState]);
+
+  const sync = useDriveSync(sessions, setSessions, tagState, setTagState);
 
   // When the timer finishes, the session is saved under the day it started
   const sw = useStopwatch(({ start, end, ms }) => {

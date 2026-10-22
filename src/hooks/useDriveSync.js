@@ -8,7 +8,15 @@ import {
   signOut,
   uploadData,
 } from "../lib/drive.js";
-import { mergeSessions, normalizeSessions, sameSessions, sortById } from "../lib/sessions.js";
+import {
+  mergeSessions,
+  mergeTag,
+  normalizeSessions,
+  normalizeTag,
+  sameSessions,
+  sameTag,
+  sortById,
+} from "../lib/sessions.js";
 
 const FLAG_KEY = "flow-drive-connected";
 const DEBOUNCE_MS = 1200;
@@ -29,7 +37,7 @@ const writeFlag = (on) => {
 };
 
 // status: "off" | "syncing" | "synced" | "needs-auth" | "error"
-export function useDriveSync(sessions, setSessions) {
+export function useDriveSync(sessions, setSessions, tagState, setTagState) {
   const initiallyConnected = driveConfigured && readFlag();
   const [connected, setConnected] = useState(initiallyConnected);
   const [status, setStatus] = useState(initiallyConnected ? "syncing" : "off");
@@ -38,12 +46,15 @@ export function useDriveSync(sessions, setSessions) {
 
   const sessionsRef = useRef(sessions);
   sessionsRef.current = sessions;
+  const tagRef = useRef(tagState);
+  tagRef.current = tagState;
   const connectedRef = useRef(initiallyConnected);
   const running = useRef(false);
   const rerun = useRef(false);
   const lastRun = useRef(0);
   // A change made by the sync itself must not trigger another sync
   const skipNext = useRef(true);
+  const skipTag = useRef(true);
 
   const run = useCallback(async () => {
     if (!connectedRef.current) return;
@@ -59,13 +70,19 @@ export function useDriveSync(sessions, setSessions) {
       const remoteSessions = normalizeSessions(remote?.sessions);
       const local = sessionsRef.current;
       const merged = mergeSessions(local, remoteSessions);
+      const remoteTag = normalizeTag(remote?.tag);
+      const mergedTag = mergeTag(tagRef.current, remoteTag);
 
       if (!sameSessions(sortById(local), merged)) {
         skipNext.current = true;
         setSessions(merged);
       }
-      if (!remote || !sameSessions(sortById(remoteSessions), merged)) {
-        await uploadData({ version: 1, sessions: merged });
+      if (!sameTag(tagRef.current, mergedTag)) {
+        skipTag.current = true;
+        setTagState(mergedTag);
+      }
+      if (!remote || !sameSessions(sortById(remoteSessions), merged) || !sameTag(remoteTag, mergedTag)) {
+        await uploadData({ version: 2, sessions: merged, tag: mergedTag });
       }
       setStatus("synced");
       setLastSynced(Date.now());
@@ -87,7 +104,7 @@ export function useDriveSync(sessions, setSessions) {
         run();
       }
     }
-  }, [setSessions]);
+  }, [setSessions, setTagState]);
 
   // Sync shortly after sessions change
   useEffect(() => {
@@ -99,6 +116,17 @@ export function useDriveSync(sessions, setSessions) {
     const id = setTimeout(run, DEBOUNCE_MS);
     return () => clearTimeout(id);
   }, [sessions, run]);
+
+  // Sync shortly after the tag changes (a tag that came from sync itself does not trigger another sync)
+  useEffect(() => {
+    if (skipTag.current) {
+      skipTag.current = false;
+      return;
+    }
+    if (!connectedRef.current) return;
+    const id = setTimeout(run, DEBOUNCE_MS);
+    return () => clearTimeout(id);
+  }, [tagState, run]);
 
   // On startup: preload the Google script and sync silently if previously connected
   useEffect(() => {
