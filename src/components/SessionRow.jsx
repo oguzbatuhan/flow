@@ -61,8 +61,30 @@ export function SessionRow({ session, onRemove, reveal = false }) {
   const label = session.tag || "Etiketsiz";
   const open = mode !== "closed";
 
+  // While open, a tap anywhere outside this record closes it. Listens to "click", not "pointerdown": closing on press
+  // shrinks the list under the finger, so the tap would land on another row and the new row would not open.
+  const rootRef = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e) => {
+      // composedPath is captured when the click starts, so it still works when the clicked button (Sil) was
+      // removed from the page by the re-render before this listener ran
+      const inside = rootRef.current && e.composedPath().includes(rootRef.current);
+      if (!inside) setMode("closed");
+    };
+    document.addEventListener("click", onDown);
+    return () => document.removeEventListener("click", onDown);
+  }, [open]);
+
   return (
-    <li className={reveal ? "task-in" : undefined}>
+    <li
+      ref={rootRef}
+      className={
+        "-mx-2 rounded-xl border px-[calc(0.5rem-1px)] transition-colors " +
+        (open ? "border-[var(--line-strong)] bg-[var(--surface)]" : "border-transparent hover:bg-[var(--hover)]") +
+        (reveal ? " task-in" : "")
+      }
+    >
       <div
         role="button"
         tabIndex={0}
@@ -75,7 +97,7 @@ export function SessionRow({ session, onRemove, reveal = false }) {
             setMode(open ? "closed" : "open");
           }
         }}
-        className="-mx-2 flex min-h-[3.25rem] cursor-pointer items-center gap-3 rounded-xl px-2 transition-colors hover:bg-[var(--hover)]"
+        className="flex min-h-[3.25rem] cursor-pointer items-center gap-3 rounded-xl"
       >
         <span
           className={
