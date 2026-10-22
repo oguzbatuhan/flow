@@ -7,39 +7,44 @@ import { useDriveSync } from "./hooks/useDriveSync.js";
 import { useStopwatch } from "./hooks/useStopwatch.js";
 import { useWakeLock } from "./hooks/useWakeLock.js";
 import { groupLabel, toIso } from "./lib/dates.js";
-import {
-  STORAGE_KEY,
-  TAG_KEY,
-  cleanTag,
-  groupByDay,
-  loadSessions,
-  loadTag,
-  newSession,
-  recentTags,
-} from "./lib/sessions.js";
+import { STORAGE_KEY, cleanTag, groupByDay, loadSessions, newSession, recentTags } from "./lib/sessions.js";
 import { clockMS, human } from "./lib/time.js";
 
 const FIRST_PAGE_DAYS = 14;
+const TAG_KEY = "flow-tag-v1";
 
 export default function App() {
   const [today, setToday] = useState(() => toIso(new Date()));
   const [sessions, setSessions] = useState(loadSessions);
   const [big, setBig] = useState(false);
   const [dayLimit, setDayLimit] = useState(FIRST_PAGE_DAYS);
-  // Tag of the work in progress ({ value, updatedAt }); kept in this browser and synced through Drive
-  const [tagState, setTagState] = useState(loadTag);
-  const tag = tagState.value;
+  const sync = useDriveSync(sessions, setSessions);
+
+  // Tag of the work in progress; kept in this browser so it survives reloads and is reused next time
+  const [tag, setTagState] = useState(() => {
+    try {
+      const raw = localStorage.getItem(TAG_KEY) || "";
+      // An earlier build stored this as JSON ({"value":"...","updatedAt":...}); read it back as plain text
+      if (raw.startsWith("{")) {
+        try {
+          const v = cleanTag(JSON.parse(raw).value);
+          localStorage.setItem(TAG_KEY, v);
+          return v;
+        } catch {}
+      }
+      return cleanTag(raw);
+    } catch {
+      return "";
+    }
+  });
   const tagRef = useRef(tag);
   tagRef.current = tag;
-  const setTag = (v) =>
-    setTagState((prev) => (prev.value === v ? prev : { value: v, updatedAt: Date.now() }));
-  useEffect(() => {
+  const setTag = (v) => {
+    setTagState(v);
     try {
-      localStorage.setItem(TAG_KEY, JSON.stringify(tagState));
+      localStorage.setItem(TAG_KEY, v);
     } catch {}
-  }, [tagState]);
-
-  const sync = useDriveSync(sessions, setSessions, tagState, setTagState);
+  };
 
   // When the timer finishes, the session is saved under the day it started
   const sw = useStopwatch(({ start, end, ms }) => {
