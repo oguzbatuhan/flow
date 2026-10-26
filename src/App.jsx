@@ -3,7 +3,7 @@ import SyncBar from "./components/SyncBar.jsx";
 import TimerCard from "./components/TimerCard.jsx";
 import BigClock from "./components/BigClock.jsx";
 import { DayToggle, GroupHead, SessionRow } from "./components/SessionRow.jsx";
-import { useDriveSync } from "./hooks/useDriveSync.js";
+import { useCloudSync } from "./hooks/useCloudSync.js";
 import { useStopwatch } from "./hooks/useStopwatch.js";
 import { useWakeLock } from "./hooks/useWakeLock.js";
 import { groupLabel, toIso } from "./lib/dates.js";
@@ -18,7 +18,7 @@ export default function App() {
   const [sessions, setSessions] = useState(loadSessions);
   const [big, setBig] = useState(false);
   const [dayLimit, setDayLimit] = useState(FIRST_PAGE_DAYS);
-  const sync = useDriveSync(sessions, setSessions);
+  const sync = useCloudSync(sessions, setSessions);
 
   // Tag of the work in progress; kept in this browser so it survives reloads and is reused next time
   const [tag, setTagState] = useState(() => {
@@ -54,7 +54,7 @@ export default function App() {
   // Keep the screen on while running (and while the big view is open)
   const wake = useWakeLock(sw.status === "running" || big);
 
-  // Local copy: sessions are kept in this browser even when not connected to Drive
+  // Local copy: sessions are kept in this browser even when not connected to the cloud backup
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));

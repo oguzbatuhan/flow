@@ -20,7 +20,7 @@ export default defineConfig({
         name: "Akış",
         short_name: "Akış",
         description:
-          "Ders çalışma süreni ölç, günlere göre kaydet, Google Drive ile eşitle.",
+          "Ders çalışma süreni ölç, günlere göre kaydet, Google ile giriş yapıp Supabase'e yedekle.",
         lang: "tr",
         start_url: base,
         scope: base,
