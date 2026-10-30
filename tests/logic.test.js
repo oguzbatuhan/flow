@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { clockMS, human, humanMS, minutesOf, MIN_SESSION_MS } from "../src/lib/time.js";
 import { groupLabel, toIso } from "../src/lib/dates.js";
 import { cleanTag, groupByDay, mergeSessions, normalizeSessions, newSession, recentTags } from "../src/lib/sessions.js";
+import { groupByMonth, monthKey, monthLabel } from "../src/lib/history.js";
 
 test("clockMS: minutes and seconds, no hours", () => {
   assert.equal(clockMS(0), "00:00");
@@ -98,4 +99,30 @@ test("sync: same change time never loses the tag", () => {
   const noTag = { ...withTag, tag: "" };
   assert.equal(mergeSessions([noTag], [withTag])[0].tag, "Matematik");
   assert.equal(mergeSessions([withTag], [noTag])[0].tag, "Matematik");
+});
+
+test("history: monthKey and monthLabel", () => {
+  assert.equal(monthKey("2026-10-18"), "2026-10");
+  // Same year as today: month name only; any other year: name and year
+  assert.equal(monthLabel("2026-10", "2026-10-30"), "Ekim");
+  assert.equal(monthLabel("2025-12", "2026-10-30"), "Aralık 2025");
+});
+
+test("history: groupByMonth keeps newest-first order and splits by month", () => {
+  const days = [
+    { date: "2026-10-29" },
+    { date: "2026-10-02" },
+    { date: "2026-09-30" },
+    { date: "2025-12-31" },
+  ];
+  const groups = groupByMonth(days, "2026-10-30");
+  assert.deepEqual(
+    groups.map((g) => [g.key, g.label, g.days.map((d) => d.date)]),
+    [
+      ["2026-10", "Ekim", ["2026-10-29", "2026-10-02"]],
+      ["2026-09", "Eylül", ["2026-09-30"]],
+      ["2025-12", "Aralık 2025", ["2025-12-31"]],
+    ]
+  );
+  assert.deepEqual(groupByMonth([], "2026-10-30"), []);
 });

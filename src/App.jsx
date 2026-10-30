@@ -2,22 +2,76 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import SyncBar from "./components/SyncBar.jsx";
 import TimerCard from "./components/TimerCard.jsx";
 import BigClock from "./components/BigClock.jsx";
-import { DayToggle, GroupHead, SessionRow } from "./components/SessionRow.jsx";
+import { HistoryButton, HistoryDay, HistorySheet, MonthHead } from "./components/History.jsx";
+import { GroupHead, SessionRow } from "./components/SessionRow.jsx";
 import { useCloudSync } from "./hooks/useCloudSync.js";
 import { useStopwatch } from "./hooks/useStopwatch.js";
 import { useWakeLock } from "./hooks/useWakeLock.js";
 import { groupLabel, toIso } from "./lib/dates.js";
+import { groupByMonth } from "./lib/history.js";
 import { STORAGE_KEY, cleanTag, groupByDay, loadSessions, newSession, recentTags } from "./lib/sessions.js";
 import { clockMS, human } from "./lib/time.js";
 
-const FIRST_PAGE_DAYS = 14;
+const HISTORY_PAGE_DAYS = 30;
 const TAG_KEY = "flow-tag-v1";
+
+// The hidden history: past days, newest first, grouped by month. Only the newest day starts open.
+// It lives in its own component so every time the drawer opens it starts fresh.
+function History({ days, today, onRemove, onClose }) {
+  const [limit, setLimit] = useState(HISTORY_PAGE_DAYS);
+  const [openDays, setOpenDays] = useState(() => new Set(days.length ? [days[0].date] : []));
+  const toggle = (date) =>
+    setOpenDays((prev) => {
+      const next = new Set(prev);
+      next.has(date) ? next.delete(date) : next.add(date);
+      return next;
+    });
+
+  const months = useMemo(() => groupByMonth(days.slice(0, limit), today), [days, limit, today]);
+  const total = days.reduce((n, g) => n + g.total, 0);
+
+  return (
+    <HistorySheet summary={days.length + " gün · " + human(total)} onClose={onClose}>
+      {months.map((m) => (
+        <div key={m.key}>
+          <MonthHead label={m.label} meta={human(m.days.reduce((n, g) => n + g.total, 0))} />
+          {m.days.map((g) => {
+            const label = groupLabel(g.date, today);
+            return (
+              <HistoryDay
+                key={g.date}
+                primary={label.primary}
+                secondary={label.secondary}
+                meta={human(g.total)}
+                open={openDays.has(g.date)}
+                onToggle={() => toggle(g.date)}
+              >
+                <ul>
+                  {g.items.map((s) => (
+                    <SessionRow key={s.id} session={s} onRemove={onRemove} />
+                  ))}
+                </ul>
+              </HistoryDay>
+            );
+          })}
+        </div>
+      ))}
+      {days.length > limit ? (
+        <div className="flex justify-center py-5">
+          <button type="button" onClick={() => setLimit((n) => n + HISTORY_PAGE_DAYS)} className="btn btn-ghost btn-sm">
+            Daha eski günler
+          </button>
+        </div>
+      ) : null}
+    </HistorySheet>
+  );
+}
 
 export default function App() {
   const [today, setToday] = useState(() => toIso(new Date()));
   const [sessions, setSessions] = useState(loadSessions);
   const [big, setBig] = useState(false);
-  const [dayLimit, setDayLimit] = useState(FIRST_PAGE_DAYS);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const sync = useCloudSync(sessions, setSessions);
 
   // Tag of the work in progress; kept in this browser so it survives reloads and is reused next time
@@ -81,17 +135,14 @@ export default function App() {
   const hasAny = useMemo(() => sessions.some((s) => !s.deleted), [sessions]);
   const tags = useMemo(() => recentTags(sessions), [sessions]);
   const todayGroup = groups.find((g) => g.date === today);
-  const shown = groups.slice(0, dayLimit);
+  // Everything except today goes behind the history button (groups are already newest first)
+  const pastDays = useMemo(() => groups.filter((g) => g.date !== today && g.items.length > 0), [groups, today]);
+  const todayLabel = groupLabel(today, today);
 
-  // Past days start closed; today is always open. Open state is per day, so when midnight
-  // passes, the day that was "today" simply falls back to closed.
-  const [openDays, setOpenDays] = useState(() => new Set());
-  const toggleDay = (date) =>
-    setOpenDays((prev) => {
-      const next = new Set(prev);
-      next.has(date) ? next.delete(date) : next.add(date);
-      return next;
-    });
+  // No past days left (e.g. the last one was deleted): the drawer has nothing to show
+  useEffect(() => {
+    if (pastDays.length === 0) setHistoryOpen(false);
+  }, [pastDays.length]);
 
   const remove = (id) =>
     setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, deleted: true, updatedAt: Date.now() } : s)));
@@ -113,39 +164,34 @@ export default function App() {
           Henüz kayıt yok. Süreyi başlat, bitirdiğinde bugünün altına eklenir.
         </p>
       ) : (
-        <div className="flex flex-col gap-9">
-          {shown.map((g) => {
-            const label = groupLabel(g.date, today);
-            const isToday = g.date === today;
-            // Today is always open; past days are open only after the user taps "Kayıtlar"
-            const open = isToday || openDays.has(g.date);
-            return (
-              <section key={g.date}>
-                <GroupHead primary={label.primary} secondary={label.secondary} total={human(g.total)} />
-                {!isToday && g.items.length > 0 ? (
-                  <DayToggle count={g.items.length} open={open} onToggle={() => toggleDay(g.date)} />
-                ) : null}
-                {g.items.length === 0 ? (
-                  <p className="py-3 text-sm text-[var(--muted)]">Bugün henüz kayıt yok.</p>
-                ) : open ? (
-                  <ul>
-                    {g.items.map((s) => (
-                      <SessionRow key={s.id} session={s} onRemove={remove} reveal={!isToday} />
-                    ))}
-                  </ul>
-                ) : null}
-              </section>
-            );
-          })}
-          {groups.length > dayLimit ? (
-            <div className="flex justify-center">
-              <button type="button" onClick={() => setDayLimit((n) => n + FIRST_PAGE_DAYS)} className="btn btn-ghost">
-                Daha eski günler
-              </button>
+        <>
+          <section>
+            <GroupHead
+              primary={todayLabel.primary}
+              secondary={todayLabel.secondary}
+              total={human(todayGroup ? todayGroup.total : 0)}
+            />
+            {todayGroup && todayGroup.items.length > 0 ? (
+              <ul>
+                {todayGroup.items.map((s) => (
+                  <SessionRow key={s.id} session={s} onRemove={remove} />
+                ))}
+              </ul>
+            ) : (
+              <p className="py-3 text-sm text-[var(--muted)]">Bugün henüz kayıt yok.</p>
+            )}
+          </section>
+          {pastDays.length > 0 ? (
+            <div className="mt-6 flex justify-center">
+              <HistoryButton count={pastDays.length} onClick={() => setHistoryOpen(true)} />
             </div>
           ) : null}
-        </div>
+        </>
       )}
+
+      {historyOpen && pastDays.length > 0 ? (
+        <History days={pastDays} today={today} onRemove={remove} onClose={() => setHistoryOpen(false)} />
+      ) : null}
 
       {big ? <BigClock sw={sw} wake={wake} tag={tag} onClose={() => setBig(false)} /> : null}
     </main>
