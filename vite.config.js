@@ -19,18 +19,20 @@ export default defineConfig({
         id: base,
         name: "Akış",
         short_name: "Akış",
-        description:
-          "Ders çalışma süreni ölç, günlere göre kaydet, Google ile giriş yapıp Supabase'e yedekle.",
+        description: "Odak süreni ölç. Oturumları kaydet, günlere göre incele, yedekle.",
         lang: "tr",
+        dir: "ltr",
         start_url: base,
         scope: base,
         display: "standalone",
+        display_override: ["standalone", "minimal-ui"],
+        orientation: "portrait-primary",
         background_color: "#0a0a0a",
-        // Matches forced dark theme in index.css / index.html
         theme_color: "#0a0a0a",
+        categories: ["productivity", "education"],
         icons: [
-          { src: "icon-192.png", sizes: "192x192", type: "image/png" },
-          { src: "icon-512.png", sizes: "512x512", type: "image/png" },
+          { src: "icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+          { src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
           {
             src: "icon-maskable-512.png",
             sizes: "512x512",
