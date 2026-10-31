@@ -26,12 +26,38 @@ function History({ days, today, onRemove, onClose }) {
       next.has(date) ? next.delete(date) : next.add(date);
       return next;
     });
+  const visibleDates = days.slice(0, limit).map((g) => g.date);
+  const expandAll = () => setOpenDays(new Set(visibleDates));
+  const collapseAll = () => setOpenDays(new Set());
 
   const months = useMemo(() => groupByMonth(days.slice(0, limit), today), [days, limit, today]);
   const total = days.reduce((n, g) => n + g.total, 0);
 
   return (
-    <HistorySheet summary={days.length + " gün · " + human(total)} onClose={onClose}>
+    <HistorySheet
+      summary={days.length + " gün · " + human(total)}
+      onClose={onClose}
+      toolbar={
+        days.length > 0 ? (
+          <div className="flex items-center justify-end gap-1">
+            <button
+              type="button"
+              onClick={expandAll}
+              className="rounded-lg px-2 py-1 text-xs font-medium text-[var(--muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)]"
+            >
+              Aç
+            </button>
+            <button
+              type="button"
+              onClick={collapseAll}
+              className="rounded-lg px-2 py-1 text-xs font-medium text-[var(--muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)]"
+            >
+              Kapat
+            </button>
+          </div>
+        ) : null
+      }
+    >
       {months.map((m) => (
         <div key={m.key}>
           <MonthHead label={m.label} meta={human(m.days.reduce((n, g) => n + g.total, 0))} />
