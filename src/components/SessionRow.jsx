@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { TrashIcon } from "./Icons.jsx";
 import { hourMinute, human } from "../lib/time.js";
 
@@ -20,7 +20,7 @@ const CONFIRM_MS = 5000;
 
 // A record shows what was worked on (tag) and how long. Tapping it reveals the delete button.
 // reveal: play the soft fade-in (used for rows of past days that were just opened)
-export function SessionRow({ session, onRemove, reveal = false }) {
+export const SessionRow = memo(function SessionRow({ session, onRemove, reveal = false }) {
   // "closed" | "open" (delete button visible) | "confirm" (asking "Silinsin mi?")
   const [mode, setMode] = useState("closed");
   const cancelRef = useRef(null);
@@ -124,4 +124,4 @@ export function SessionRow({ session, onRemove, reveal = false }) {
       ) : null}
     </li>
   );
-}
+});

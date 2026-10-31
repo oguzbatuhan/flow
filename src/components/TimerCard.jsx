@@ -60,7 +60,7 @@ export default function TimerCard({ sw, wake, tag, onTag, tags, onBig }) {
         ms={sw.elapsed}
         running={sw.status === "running"}
         className="mb-5 mt-7"
-        style={{ fontSize: "clamp(3rem, 15vw, 4rem)" }}
+        style={{ fontSize: "clamp(3rem, 15vw, 5.5rem)" }}
       />
 
       <div className="mb-6">

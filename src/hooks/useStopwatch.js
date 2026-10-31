@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { MIN_SESSION_MS } from "../lib/time.js";
 
 const KEY = "flow-stopwatch-v1";
-const TICK_MS = 250;
+const TICK_MS = 200;
 const EMPTY = { sessionStart: null, acc: 0, startedAt: null };
 
 // Elapsed time is computed from timestamps, not by incrementing a counter.
@@ -46,7 +46,15 @@ export function useStopwatch(onFinish) {
   const running = state.startedAt != null;
   useEffect(() => {
     if (!running) return;
-    const tick = () => setNow(Date.now());
+    // The display shows whole seconds: only re-render when the shown second changes (not on every tick)
+    const tick = () => {
+      const t = Date.now();
+      setNow((prev) => {
+        const { acc, startedAt } = ref.current;
+        if (startedAt == null) return prev;
+        return Math.floor((acc + t - startedAt) / 1000) === Math.floor((acc + prev - startedAt) / 1000) ? prev : t;
+      });
+    };
     tick();
     const id = setInterval(tick, TICK_MS);
     document.addEventListener("visibilitychange", tick);

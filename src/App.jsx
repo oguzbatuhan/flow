@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import SyncBar from "./components/SyncBar.jsx";
 import TimerCard from "./components/TimerCard.jsx";
 import BigClock from "./components/BigClock.jsx";
@@ -170,11 +170,13 @@ export default function App() {
     if (pastDays.length === 0) setHistoryOpen(false);
   }, [pastDays.length]);
 
-  const remove = (id) =>
-    setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, deleted: true, updatedAt: Date.now() } : s)));
+  const remove = useCallback(
+    (id) => setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, deleted: true, updatedAt: Date.now() } : s))),
+    [],
+  );
 
   return (
-    <main className="mx-auto w-full max-w-md">
+    <main className="mx-auto w-full max-w-xl">
       <header className="mb-8 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-xl font-medium tracking-tight">Akış</h1>
