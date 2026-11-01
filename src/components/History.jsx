@@ -11,7 +11,7 @@ export function HistoryButton({ count, onClick }) {
       className="inline-flex h-10 items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface)] pl-3.5 pr-2 text-[0.8125rem] font-medium text-[var(--fg)] transition-colors active:bg-[var(--hover)] hover:border-[var(--line-strong)]"
     >
       <HistoryIcon />
-      <span>Geçmiş</span>
+      <span>History</span>
       <span className="tabular rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-semibold text-[var(--accent)]">
         {count}
       </span>
@@ -19,7 +19,7 @@ export function HistoryButton({ count, onClick }) {
   );
 }
 
-export function HistorySheet({ title = "Geçmiş", summary, toolbar, onClose, children }) {
+export function HistorySheet({ title = "History", summary, toolbar, onClose, children }) {
   const panelRef = useRef(null);
   const closeRef = useRef(null);
   const closeFn = useRef(onClose);
@@ -157,7 +157,7 @@ export function HistorySheet({ title = "Geçmiş", summary, toolbar, onClose, ch
               ref={closeRef}
               type="button"
               onClick={onClose}
-              aria-label="Kapat"
+              aria-label="Close"
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--surface)] text-[var(--muted)] ring-1 ring-[var(--line)] active:bg-[var(--hover)]"
               onPointerDown={(e) => e.stopPropagation()}
             >
@@ -175,7 +175,7 @@ export function HistorySheet({ title = "Geçmiş", summary, toolbar, onClose, ch
           <button
             type="button"
             onClick={onClose}
-            aria-label="Kapat"
+            aria-label="Close"
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--bg)] text-[var(--muted)] ring-1 ring-[var(--line)] hover:text-[var(--fg)]"
           >
             <CloseIcon />

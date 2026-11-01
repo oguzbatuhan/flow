@@ -16,19 +16,19 @@ test("clockMS: minutes and seconds, no hours", () => {
 });
 
 test("humanMS: session row", () => {
-  assert.equal(humanMS(0), "0 sn");
-  assert.equal(humanMS(40000), "40 sn");
-  assert.equal(humanMS(50 * 60000), "50 dk");
-  assert.equal(humanMS(50 * 60000 + 12000), "50 dk 12 sn");
-  assert.equal(humanMS(3 * 3600000 + 5 * 60000), "185 dk");
+  assert.equal(humanMS(0), "0 sec");
+  assert.equal(humanMS(40000), "40 sec");
+  assert.equal(humanMS(50 * 60000), "50 min");
+  assert.equal(humanMS(50 * 60000 + 12000), "50 min 12 sec");
+  assert.equal(humanMS(3 * 3600000 + 5 * 60000), "185 min");
 });
 
 test("human: day total in hours and minutes", () => {
-  assert.equal(human(0), "0 dk");
-  assert.equal(human(59000), "0 dk");
-  assert.equal(human(45 * 60000), "45 dk");
-  assert.equal(human(2 * 3600000), "2 sa");
-  assert.equal(human(2 * 3600000 + 15 * 60000 + 59000), "2 sa 15 dk");
+  assert.equal(human(0), "0 min");
+  assert.equal(human(59000), "0 min");
+  assert.equal(human(45 * 60000), "45 min");
+  assert.equal(human(2 * 3600000), "2 h");
+  assert.equal(human(2 * 3600000 + 15 * 60000 + 59000), "2 h 15 min");
   assert.equal(minutesOf(3725000), 62);
 });
 
@@ -77,35 +77,35 @@ test("corrupt records are dropped", () => {
 });
 
 test("day heading", () => {
-  assert.equal(groupLabel("2026-10-18", "2026-10-18").primary, "Bugün");
-  assert.equal(groupLabel("2026-10-17", "2026-10-18").primary, "Dün");
-  assert.equal(groupLabel("2026-10-13", "2026-10-18").primary, "Salı");
+  assert.equal(groupLabel("2026-10-18", "2026-10-18").primary, "Today");
+  assert.equal(groupLabel("2026-10-17", "2026-10-18").primary, "Yesterday");
+  assert.equal(groupLabel("2026-10-13", "2026-10-18").primary, "Tuesday");
   assert.equal(toIso(new Date(2026, 9, 5)), "2026-10-05");
 });
 
 test("tags: cleaned, stored on sessions and listed by recency", () => {
-  assert.equal(cleanTag("  Matematik   çalışma "), "Matematik çalışma");
+  assert.equal(cleanTag("  Math   study "), "Math study");
   assert.equal(cleanTag("x".repeat(50)).length, 30);
   assert.equal(cleanTag(undefined), "");
-  assert.equal(newSession({ date: "2026-10-18", start: 1, end: 2, ms: M, tag: " Kod " }).tag, "Kod");
+  assert.equal(newSession({ date: "2026-10-18", start: 1, end: 2, ms: M, tag: " Code " }).tag, "Code");
   // Old records without a tag load as untagged
   assert.equal(normalizeSessions([s("o", "2026-10-18", M)])[0].tag, "");
-  const list = [s("a", "2026-10-17", M, 1, { tag: "Kod", start: 1 }), s("b", "2026-10-18", M, 1, { tag: "Matematik", start: 5 }), s("c", "2026-10-18", M, 1, { tag: "kod", start: 9 }), s("d", "2026-10-18", M, 1, { start: 10 })];
-  assert.deepEqual(recentTags(list), ["kod", "Matematik"]);
+  const list = [s("a", "2026-10-17", M, 1, { tag: "Code", start: 1 }), s("b", "2026-10-18", M, 1, { tag: "Math", start: 5 }), s("c", "2026-10-18", M, 1, { tag: "code", start: 9 }), s("d", "2026-10-18", M, 1, { start: 10 })];
+  assert.deepEqual(recentTags(list), ["code", "Math"]);
 });
 
 test("sync: same change time never loses the tag", () => {
-  const withTag = { id: "a", date: "2026-10-22", start: 1, end: 2, ms: 60000, tag: "Matematik", deleted: false, updatedAt: 100 };
+  const withTag = { id: "a", date: "2026-10-22", start: 1, end: 2, ms: 60000, tag: "Math", deleted: false, updatedAt: 100 };
   const noTag = { ...withTag, tag: "" };
-  assert.equal(mergeSessions([noTag], [withTag])[0].tag, "Matematik");
-  assert.equal(mergeSessions([withTag], [noTag])[0].tag, "Matematik");
+  assert.equal(mergeSessions([noTag], [withTag])[0].tag, "Math");
+  assert.equal(mergeSessions([withTag], [noTag])[0].tag, "Math");
 });
 
 test("history: monthKey and monthLabel", () => {
   assert.equal(monthKey("2026-10-18"), "2026-10");
   // Same year as today: month name only; any other year: name and year
-  assert.equal(monthLabel("2026-10", "2026-10-30"), "Ekim");
-  assert.equal(monthLabel("2025-12", "2026-10-30"), "Aralık 2025");
+  assert.equal(monthLabel("2026-10", "2026-10-30"), "October");
+  assert.equal(monthLabel("2025-12", "2026-10-30"), "December 2025");
 });
 
 test("history: groupByMonth keeps newest-first order and splits by month", () => {
@@ -119,9 +119,9 @@ test("history: groupByMonth keeps newest-first order and splits by month", () =>
   assert.deepEqual(
     groups.map((g) => [g.key, g.label, g.days.map((d) => d.date)]),
     [
-      ["2026-10", "Ekim", ["2026-10-29", "2026-10-02"]],
-      ["2026-09", "Eylül", ["2026-09-30"]],
-      ["2025-12", "Aralık 2025", ["2025-12-31"]],
+      ["2026-10", "October", ["2026-10-29", "2026-10-02"]],
+      ["2026-09", "September", ["2026-09-30"]],
+      ["2025-12", "December 2025", ["2025-12-31"]],
     ]
   );
   assert.deepEqual(groupByMonth([], "2026-10-30"), []);

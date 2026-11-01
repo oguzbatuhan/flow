@@ -6,7 +6,7 @@ export default function Controls({ sw, size = "normal" }) {
     return (
       <div className="flex justify-center">
         <button type="button" onClick={sw.start} className={"btn btn-solid" + lg}>
-          Başlat
+          Start
         </button>
       </div>
     );
@@ -20,10 +20,10 @@ export default function Controls({ sw, size = "normal" }) {
         onClick={running ? sw.pause : sw.resume}
         className={"btn btn-solid" + lg}
       >
-        {running ? "Duraklat" : "Devam"}
+        {running ? "Pause" : "Resume"}
       </button>
       <button type="button" onClick={sw.finish} className={"btn btn-ghost" + lg}>
-        Bitir
+        Finish
       </button>
     </div>
   );

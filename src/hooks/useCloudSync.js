@@ -81,7 +81,7 @@ export function useCloudSync(sessions, setSessions) {
         setStatus("error");
         const offline = !navigator.onLine || e instanceof TypeError;
         setError(
-          offline ? "İnternet bağlantısı yok, bağlantı gelince yeniden denenecek." : e.message || "Bilinmeyen hata"
+          offline ? "No internet connection; will retry when it's back." : e.message || "Unknown error"
         );
       }
     } finally {
@@ -155,7 +155,7 @@ export function useCloudSync(sessions, setSessions) {
     } catch (e) {
       writeFlag(connectedRef.current);
       setStatus(connectedRef.current ? "needs-auth" : "off");
-      setError(e.message || "Giriş başlatılamadı");
+      setError(e.message || "Could not start sign-in");
     }
   }, []);
 

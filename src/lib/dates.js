@@ -7,17 +7,17 @@ export const fromIso = (s) => {
   return new Date(y, m - 1, d, 12);
 };
 
-const weekdayLong = (d) => d.toLocaleDateString("tr-TR", { weekday: "long" });
-const dayAndMonthLong = (d) => d.getDate() + " " + d.toLocaleDateString("tr-TR", { month: "long" });
+const weekdayLong = (d) => d.toLocaleDateString("en-US", { weekday: "long" });
+const dayAndMonthLong = (d) => d.toLocaleDateString("en-US", { month: "long" }) + " " + d.getDate();
 
-// Day heading: "Bugün  18 Ekim Pazar", "Dün  17 Ekim Cumartesi", "Salı  13 Ekim"
+// Day heading: "Today  Sunday, October 18", "Yesterday  Saturday, October 17", "Tuesday  October 13"
 export function groupLabel(iso, today) {
   const d = fromIso(iso);
   const yesterday = fromIso(today);
   yesterday.setDate(yesterday.getDate() - 1);
   const long = weekdayLong(d);
-  if (iso === today) return { primary: "Bugün", secondary: dayAndMonthLong(d) + " " + long };
-  if (iso === toIso(yesterday)) return { primary: "Dün", secondary: dayAndMonthLong(d) + " " + long };
+  if (iso === today) return { primary: "Today", secondary: long + ", " + dayAndMonthLong(d) };
+  if (iso === toIso(yesterday)) return { primary: "Yesterday", secondary: long + ", " + dayAndMonthLong(d) };
   const sameYear = d.getFullYear() === fromIso(today).getFullYear();
-  return { primary: long, secondary: dayAndMonthLong(d) + (sameYear ? "" : " " + d.getFullYear()) };
+  return { primary: long, secondary: dayAndMonthLong(d) + (sameYear ? "" : ", " + d.getFullYear()) };
 }

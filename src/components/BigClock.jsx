@@ -5,9 +5,9 @@ import { CloseIcon } from "./Icons.jsx";
 import { splitMs } from "../lib/time.js";
 
 const STATUS_TEXT = {
-  idle: "Hazır",
-  running: "Çalışıyor",
-  paused: "Duraklatıldı",
+  idle: "Ready",
+  running: "Running",
+  paused: "Paused",
 };
 
 // Full-screen big counter. Uses real fullscreen when the browser supports it,
@@ -65,7 +65,7 @@ export default function BigClock({ sw, wake, tag, onClose }) {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Büyük sayaç"
+      aria-label="Big counter"
       className="fixed inset-0 z-50 flex flex-col bg-[var(--bg)] text-[var(--fg)]"
       style={{
         paddingTop: "max(16px, env(safe-area-inset-top, 0px))",
@@ -83,12 +83,12 @@ export default function BigClock({ sw, wake, tag, onClose }) {
           <p className="mt-1 text-xs text-[var(--muted)]">
             {wake.supported
               ? wake.held
-                ? "Ekran açık kalıyor"
-                : "Ekran kilidi bekleniyor"
-              : "Bu tarayıcı ekranı açık tutamıyor"}
+                ? "Screen stays on"
+                : "Waiting for screen lock"
+              : "This browser can't keep the screen on"}
           </p>
         </div>
-        <button type="button" onClick={onClose} aria-label="Büyük ekranı kapat" title="Kapat" className="icon-btn">
+        <button type="button" onClick={onClose} aria-label="Close big screen" title="Close" className="icon-btn">
           <CloseIcon />
         </button>
       </div>

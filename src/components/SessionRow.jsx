@@ -21,7 +21,7 @@ const CONFIRM_MS = 5000;
 // A record shows what was worked on (tag) and how long. Tapping it reveals the delete button.
 // reveal: play the soft fade-in (used for rows of past days that were just opened)
 export const SessionRow = memo(function SessionRow({ session, onRemove, reveal = false }) {
-  // "closed" | "open" (delete button visible) | "confirm" (asking "Silinsin mi?")
+  // "closed" | "open" (delete button visible) | "confirm" (asking "Delete?")
   const [mode, setMode] = useState("closed");
   const cancelRef = useRef(null);
   const delRef = useRef(null);
@@ -40,7 +40,7 @@ export const SessionRow = memo(function SessionRow({ session, onRemove, reveal =
     prevMode.current = mode;
   });
 
-  const label = session.tag || "Etiketsiz";
+  const label = session.tag || "Untagged";
   const open = mode !== "closed";
 
   // While open, a tap anywhere outside this record closes it. Listens to "click", not "pointerdown": closing on press
@@ -49,7 +49,7 @@ export const SessionRow = memo(function SessionRow({ session, onRemove, reveal =
   useEffect(() => {
     if (!open) return;
     const onDown = (e) => {
-      // composedPath is captured when the click starts, so it still works when the clicked button (Sil) was
+      // composedPath is captured when the click starts, so it still works when the clicked button (Delete) was
       // removed from the page by the re-render before this listener ran
       const inside = rootRef.current && e.composedPath().includes(rootRef.current);
       if (!inside) setMode("closed");
@@ -95,13 +95,13 @@ export const SessionRow = memo(function SessionRow({ session, onRemove, reveal =
       {open ? (
         <div className="task-in flex min-h-[2.5rem] items-center gap-2 pb-2">
           {mode === "confirm" ? (
-            <div role="alertdialog" aria-label={"Silme onayı: " + label} className="flex w-full items-center gap-2">
-              <span className="flex-1 text-sm">Silinsin mi?</span>
+            <div role="alertdialog" aria-label={"Delete confirmation: " + label} className="flex w-full items-center gap-2">
+              <span className="flex-1 text-sm">Delete?</span>
               <button ref={cancelRef} type="button" onClick={() => setMode("open")} className="btn btn-ghost btn-sm">
-                Vazgeç
+                Cancel
               </button>
               <button type="button" onClick={() => onRemove(session.id)} className="btn btn-warn btn-sm">
-                Sil
+                Delete
               </button>
             </div>
           ) : (
@@ -116,7 +116,7 @@ export const SessionRow = memo(function SessionRow({ session, onRemove, reveal =
                 className="btn btn-sm min-w-0 gap-1.5 border-[var(--line-strong)] text-[var(--warn)] hover:bg-[var(--hover)]"
               >
                 <TrashIcon />
-                Sil
+                Delete
               </button>
             </>
           )}

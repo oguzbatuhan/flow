@@ -7,9 +7,9 @@ import { MAX_TAG_LENGTH, cleanTag } from "../lib/sessions.js";
 const CONFIRM_MS = 5000;
 
 const STATUS_TEXT = {
-  idle: "Hazır",
-  running: "Çalışıyor",
-  paused: "Duraklatıldı",
+  idle: "Ready",
+  running: "Running",
+  paused: "Paused",
 };
 
 export default function TimerCard({ sw, wake, tag, onTag, tags, onBig }) {
@@ -36,7 +36,7 @@ export default function TimerCard({ sw, wake, tag, onTag, tags, onBig }) {
         : "bg-[var(--line-strong)]";
 
   return (
-    <section aria-label="Akış" className="pb-5 text-center">
+    <section aria-label="Flow" className="pb-5 text-center">
       <div className="flex h-9 items-center justify-between">
         <p className="flex items-center gap-2 text-sm text-[var(--muted)]">
           <span
@@ -49,8 +49,8 @@ export default function TimerCard({ sw, wake, tag, onTag, tags, onBig }) {
           type="button"
           onClick={onBig}
           className="icon-btn"
-          aria-label="Büyük ekran"
-          title="Büyük ekran"
+          aria-label="Big screen"
+          title="Big screen"
         >
           <ExpandIcon />
         </button>
@@ -74,8 +74,8 @@ export default function TimerCard({ sw, wake, tag, onTag, tags, onBig }) {
             maxLength={MAX_TAG_LENGTH}
             autoComplete="off"
             enterKeyHint="done"
-            aria-label="Etiket"
-            placeholder="Etiket (ör. Matematik)"
+            aria-label="Tag"
+            placeholder="Tag (e.g. Math)"
             className="min-w-0 flex-1 bg-transparent text-center text-[0.875rem] text-[var(--fg)] outline-none placeholder:text-[var(--muted)]"
           />
         </label>
@@ -83,10 +83,10 @@ export default function TimerCard({ sw, wake, tag, onTag, tags, onBig }) {
           <div
             className="mt-2.5 flex flex-wrap justify-center gap-1.5"
             role="group"
-            aria-label="Son kullanılan etiketler"
+            aria-label="Recently used tags"
           >
             {tags.map((t) => {
-              const on = t.toLocaleLowerCase("tr") === tag.trim().toLocaleLowerCase("tr");
+              const on = t.toLocaleLowerCase("en") === tag.trim().toLocaleLowerCase("en");
               return (
                 <button
                   key={t}
@@ -114,21 +114,21 @@ export default function TimerCard({ sw, wake, tag, onTag, tags, onBig }) {
         {sw.status === "paused" ? (
           confirming ? (
             <>
-              <span>Kaydedilmeden silinsin mi?</span>
+              <span>Discard without saving?</span>
               <button
                 ref={cancelRef}
                 type="button"
                 onClick={() => setConfirming(false)}
                 className="btn btn-ghost btn-sm"
               >
-                Vazgeç
+                Cancel
               </button>
               <button
                 type="button"
                 onClick={sw.discard}
                 className="btn btn-warn btn-sm"
               >
-                Sil
+                Discard
               </button>
             </>
           ) : (
@@ -137,20 +137,20 @@ export default function TimerCard({ sw, wake, tag, onTag, tags, onBig }) {
               onClick={() => setConfirming(true)}
               className="link-btn"
             >
-              Kaydetmeden sil
+              Discard without saving
             </button>
           )
         ) : sw.status === "running" ? (
           wake.supported ? (
             <span>
               {wake.held
-                ? "Ekran açık kalıyor"
-                : "Ekranın açık kalması için sayfayı açık tut"}
+                ? "Screen stays on"
+                : "Keep this page open so the screen stays on"}
             </span>
           ) : (
             <span className="text-[var(--warn)]">
-              Bu tarayıcı ekranı açık tutamıyor. Telefonun ekran zaman aşımını
-              uzat.
+              This browser can't keep the screen on. Increase your phone's
+              screen timeout.
             </span>
           )
         ) : null}

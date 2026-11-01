@@ -35,7 +35,7 @@ function History({ days, today, onRemove, onClose }) {
 
   return (
     <HistorySheet
-      summary={days.length + " gün · " + human(total)}
+      summary={days.length + (days.length === 1 ? " day · " : " days · ") + human(total)}
       onClose={onClose}
       toolbar={
         days.length > 0 ? (
@@ -45,14 +45,14 @@ function History({ days, today, onRemove, onClose }) {
               onClick={expandAll}
               className="rounded-lg px-2 py-1 text-xs font-medium text-[var(--muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)]"
             >
-              Aç
+              Expand all
             </button>
             <button
               type="button"
               onClick={collapseAll}
               className="rounded-lg px-2 py-1 text-xs font-medium text-[var(--muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)]"
             >
-              Kapat
+              Collapse all
             </button>
           </div>
         ) : null
@@ -85,7 +85,7 @@ function History({ days, today, onRemove, onClose }) {
       {days.length > limit ? (
         <div className="flex justify-center py-5">
           <button type="button" onClick={() => setLimit((n) => n + HISTORY_PAGE_DAYS)} className="btn btn-ghost btn-sm">
-            Daha eski günler
+            Older days
           </button>
         </div>
       ) : null}
@@ -154,7 +154,7 @@ export default function App() {
 
   // Show the elapsed time in the tab title while active
   useEffect(() => {
-    document.title = sw.status === "idle" ? "Akış" : clockMS(sw.elapsed) + " · Akış";
+    document.title = sw.status === "idle" ? "Flow" : clockMS(sw.elapsed) + " · Flow";
   }, [sw.status, sw.elapsed]);
 
   const groups = useMemo(() => groupByDay(sessions, today), [sessions, today]);
@@ -179,8 +179,8 @@ export default function App() {
     <main className="mx-auto w-full max-w-xl">
       <header className="mb-8 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-xl font-medium tracking-tight">Akış</h1>
-          <p className="tabular mt-0.5 text-sm text-[var(--muted)]">Bugün {human(todayGroup ? todayGroup.total : 0)}</p>
+          <h1 className="text-xl font-medium tracking-tight">Flow</h1>
+          <p className="tabular mt-0.5 text-sm text-[var(--muted)]">Today {human(todayGroup ? todayGroup.total : 0)}</p>
         </div>
         <SyncBar sync={sync} />
       </header>
@@ -189,7 +189,7 @@ export default function App() {
 
       {!hasAny ? (
         <p className="py-6 text-center text-sm text-[var(--muted)]">
-          Henüz kayıt yok. Süreyi başlat, bitirdiğinde bugünün altına eklenir.
+          No records yet. Start the timer; when you finish, it is added under today.
         </p>
       ) : (
         <>
@@ -206,7 +206,7 @@ export default function App() {
                 ))}
               </ul>
             ) : (
-              <p className="py-3 text-sm text-[var(--muted)]">Bugün henüz kayıt yok.</p>
+              <p className="py-3 text-sm text-[var(--muted)]">No records today yet.</p>
             )}
           </section>
           {pastDays.length > 0 ? (

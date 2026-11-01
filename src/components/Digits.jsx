@@ -7,7 +7,7 @@ export default function Digits({ ms, running, className = "", style }) {
     <p
       role="timer"
       aria-live="off"
-      aria-label={m + " dakika " + s + " saniye"}
+      aria-label={m + " minutes " + s + " seconds"}
       className={"digits " + className}
       style={style}
     >

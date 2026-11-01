@@ -1,53 +1,53 @@
-# Akış
+# Flow
 
-React + Tailwind CSS ile yapılmış çalışma süresi sayacı (kullanıcıya görünen adı **Akış**, teknik adı `flow`). Ders çalışırken süreyi başlatırsın, **Bitir ve kaydet** dediğinde süre o günün altına yazılır. Her günün başlığında çizginin sağında o günün toplam süresi görünür. Veriler tarayıcıda saklanır, istersen Google ile giriş yapıp Supabase'e yedeklenir ve cihazlar arasında eşitlenir. GitHub Actions her `main` güncellemesinde siteyi GitHub Pages'e yayınlar.
+A study-time counter built with React + Tailwind CSS (user-facing name **Flow**, technical name `flow`). Start the timer while you study, and when you press **Finish**, the time is saved under that day. Each day's heading shows that day's total on the right of the line. Data is stored in the browser; if you want, sign in with Google to back it up to Supabase and sync across devices. GitHub Actions publishes the site to GitHub Pages on every `main` update.
 
-## Özellikler
+## Features
 
-- **Başlat / Duraklat / Devam / Bitir.** Sayaç dakika:saniye olarak gösterilir (ör. `75:30`), saat yoktur. Bir dakikadan kısa çalışmalar kaydedilmez. Süre zaman damgalarından hesaplanır; sekme arka planda kalsa, ekran kilitlense ya da sayfa yenilense bile doğru kalır. Yenilenince sayaç kaldığı yerden devam eder. Çalışırken yalnızca iki nokta yavaşça sönüp yanar.
-- **Büyük ekran.** Sayacı ekrana ölçekli, ince rakamlarla gösterir; 100 dakikayı geçince rakamlar kendiliğinden küçülüp sığar. Tarayıcı destekliyorsa gerçek tam ekrana geçer. Tam ekrandan `Esc` ile ya da sağ üstteki ✕ ile çıkılır.
-- **Ekran açık kalır.** Süre işlerken (ve büyük ekran açıkken) Screen Wake Lock API ile ekranın kapanması engellenir. Chrome ve Edge'de çalışır; iPhone'da Safari 16.4 ve üzeri destekler.
-- **Günlere göre kayıt.** Bir oturum, başladığı günün altına kaydedilir. Gece yarısını aşan çalışma başladığı güne yazılır. Duraklamalar süreden düşülür. Kayıt satırları çalışılan etiketi ve süreyi saat ve dakika olarak ("1 sa 25 dk"), günün toplamı da aynı biçimde gösterir; saat aralığı ve saniye gösterilmez. Bir kayda dokununca altında çalışılan saat aralığı ve **Sil** düğmesi açılır.
-- **Geçmiş çekmecesi.** Ana ekranda yalnızca bugün görünür; geçmiş günler küçük **Geçmiş** düğmesinin arkasında gizlidir. Düğme telefonda alttan açılan bir sayfa, geniş ekranda sağdan açılan bir panel açar. İçeride günler en yeniden en eskiye, aylara ayrılmış sıralanır; yalnızca en yeni gün açık başlar, diğerleri tek satırdır (gün ve toplam süre). 30 günden eskisi için "Daha eski günler" düğmesi vardır. `Esc`, ✕ ya da dışına dokunmak kapatır.
-- **Etiket.** Sayacın altındaki alana ne üzerinde çalıştığını yaz (ör. Matematik). Son kullanılan etiketler tek dokunuşla seçilebilir; etiket kayıtla birlikte saklanır.
-- **Silme.** Her kayıtta çöp kutusu vardır, silmeden önce onay ister.
-- **Bulut eşitleme.** Google ile giriş yap; kayıtlar Supabase'deki ortak `app_backups` tablosuna `app = flow` satırı olarak yazılır.
+- **Start / Pause / Resume / Finish.** The counter is shown as minutes:seconds (e.g. `75:30`), with no hours. Sessions shorter than one minute are not saved. Time is calculated from timestamps, so it stays correct even if the tab is in the background, the screen locks or the page reloads. After a reload the counter resumes where it left off. While running, only the colon slowly fades in and out.
+- **Big screen.** Shows the counter in large, thin digits scaled to the screen; past 100 minutes the digits shrink automatically to fit. If the browser supports it, it goes into real fullscreen. Exit fullscreen with `Esc` or the ✕ at the top right.
+- **Screen stays on.** While the timer runs (and while the big screen is open), the Screen Wake Lock API prevents the screen from turning off. Works in Chrome and Edge; on iPhone it is supported in Safari 16.4 and later.
+- **Records by day.** A session is saved under the day it started. A session that runs past midnight is written to the day it started. Pauses are subtracted from the time. Record rows show the tag worked on and the duration in hours and minutes ("1 h 25 min"), and the day's total in the same format; time ranges and seconds are not shown. Tapping a record reveals the time range worked and a **Delete** button underneath.
+- **History drawer.** Only today is shown on the main screen; past days are hidden behind a small **History** button. On a phone the button opens a bottom sheet, on a wide screen a panel from the right. Inside, days are listed newest to oldest, split by month; only the newest day starts open and the others are a single row (day and total time). For days older than 30 there is an "Older days" button. `Esc`, ✕ or tapping outside closes it.
+- **Tag.** In the field under the counter, type what you are working on (e.g. Math). Recently used tags can be picked with one tap; the tag is stored with the record.
+- **Deleting.** Every record has a trash button, and deleting asks for confirmation first.
+- **Cloud sync.** Sign in with Google; records are written to the shared `app_backups` table in Supabase as the row `app = flow`.
 
-## Yerelde çalıştırma
+## Running locally
 
 ```bash
 npm install
-cp .env.example .env.local   # Supabase URL ve anon anahtarını yaz (üç uygulamada aynı)
+cp .env.example .env.local   # enter your Supabase URL and anon key (the same in all three apps)
 npm run dev                  # http://localhost:5173
-npm test                     # süre biçimi, gruplama ve eşitleme testleri
+npm test                     # tests for time format, grouping and sync
 ```
 
-Supabase anahtarları olmadan da uygulama çalışır. Bu durumda bulut yedekleme kapalıdır ve kayıtlar yalnızca tarayıcıda saklanır.
+The app also works without the Supabase keys. In that case cloud backup is off and records are stored only in the browser.
 
-## Supabase yedekleme kurulumu (bir kez, üç uygulama için ortak)
+## Supabase backup setup (once, shared by the three apps)
 
-Günlük, Akış ve Görevler **aynı Supabase projesini ve aynı tek tabloyu** (`app_backups`) kullanır. Her uygulama tabloda kendi satırına yazar (`app` sütunu: `daily`, `flow`, `task`), bu yüzden veriler karışmaz. Her kullanıcı yalnızca kendi satırlarını görür (RLS).
+Daily, Flow and Tasks use **the same Supabase project and the same single table** (`app_backups`). Each app writes to its own row in the table (the `app` column: `daily`, `flow`, `task`), so data never mixes. Each user sees only their own rows (RLS).
 
-1. **Tablo:** Supabase → SQL Editor'a `supabase/setup.sql` dosyasının içeriğini yapıştırıp çalıştır (tekrar çalıştırmak güvenli).
-2. **Google girişi:** Supabase → Authentication → Providers → **Google**'ı aç, Google Cloud'daki OAuth istemcisinin Client ID ve Client Secret değerlerini yaz. Google Cloud'da bu istemcinin **Authorized redirect URIs** listesine Supabase'in gösterdiği `https://<proje>.supabase.co/auth/v1/callback` adresini ekle.
-3. **Yönlendirme adresleri:** Supabase → Authentication → URL Configuration → **Redirect URLs** listesine üç uygulamanın adreslerini ekle (sonda `/` olacak), yerel geliştirme için de `http://localhost:5173/`. Örnek: `https://oguzbatuhan.github.io/daily/`, `https://oguzbatuhan.github.io/flow/`, `https://oguzbatuhan.github.io/task/`.
-4. **Anahtarlar:** Supabase → Project Settings → API'den `Project URL` ve `anon public` anahtarını al. Yerelde `.env.local` içine, yayında deponun **Settings → Secrets and variables → Actions → Variables** bölümüne `VITE_SUPABASE_URL` ve `VITE_SUPABASE_ANON_KEY` olarak ekle. Anahtar herkese açık olacak şekilde tasarlanmıştır; veriyi RLS korur. `service_role` anahtarını **asla** kullanma.
+1. **Table:** In Supabase → SQL Editor, paste the contents of `supabase/setup.sql` and run it (safe to run again).
+2. **Google sign-in:** Turn on Supabase → Authentication → Providers → **Google** and enter the Client ID and Client Secret of your OAuth client from Google Cloud. In Google Cloud, add the `https://<project>.supabase.co/auth/v1/callback` address shown by Supabase to this client's **Authorized redirect URIs** list.
+3. **Redirect URLs:** In Supabase → Authentication → URL Configuration → **Redirect URLs**, add the addresses of the three apps (with a trailing `/`), and `http://localhost:5173/` for local development. Example: `https://oguzbatuhan.github.io/daily/`, `https://oguzbatuhan.github.io/flow/`, `https://oguzbatuhan.github.io/task/`.
+4. **Keys:** From Supabase → Project Settings → API, take the `Project URL` and the `anon public` key. Add them as `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in `.env.local` locally, and in the repository's **Settings → Secrets and variables → Actions → Variables** for the published site. The key is designed to be public; RLS protects the data. **Never** use the `service_role` key.
 
-Tabloyu başka bir adla açtıysan `VITE_SUPABASE_TABLE` ile adını ver.
+If you created the table under a different name, give its name with `VITE_SUPABASE_TABLE`.
 
-## Yayınlama (GitHub Pages)
+## Publishing (GitHub Pages)
 
-1. Yeni bir depo aç (ör. `flow`) ve bu klasörün içeriğini `main` dalına yükle.
-2. Depo **Settings → Pages → Source** kısmını **GitHub Actions** yap.
-3. Depo **Settings → Secrets and variables → Actions → Variables** bölümüne `VITE_SUPABASE_URL` ve `VITE_SUPABASE_ANON_KEY` ekle (depo değişkenleri depoya özeldir, her yeni depoda yeniden eklenir).
-4. Yayın adresini Supabase → Authentication → URL Configuration → Redirect URLs listesine ekle (aşağıdaki kuruluma bak).
+1. Create a new repository (e.g. `flow`) and upload the contents of this folder to the `main` branch.
+2. Set the repository's **Settings → Pages → Source** to **GitHub Actions**.
+3. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` under the repository's **Settings → Secrets and variables → Actions → Variables** (repository variables are specific to the repository and must be added again for each new repository).
+4. Add the published address to the Supabase → Authentication → URL Configuration → Redirect URLs list (see the setup above).
 
-Site `https://oguzbatuhan.github.io/<depo-adi>/` adresinde yayınlanır. Chrome'da adres çubuğundaki yükle simgesiyle kendi uygulaması olarak kurulur.
+The site is published at `https://oguzbatuhan.github.io/<repo-name>/`. In Chrome, use the install icon in the address bar to install it as its own app.
 
-## Tasarım
+## Design
 
-Yazı tipi Geist'tir ve uygulamayla birlikte gelir (Google Fonts'a bağlanmaz, çevrimdışı da aynı görünür). Renkler ve düğme biçimleri `src/index.css` içindeki jetonlardan gelir; açık ve koyu tema otomatiktir.
+The typeface is Geist and ships with the app (it does not connect to Google Fonts, so it looks the same offline). Colors and button styles come from the tokens in `src/index.css`; light and dark themes are automatic.
 
-## Simgeler
+## Icons
 
-`python3 scripts/make-icons.py` (Pillow gerekir) `public/` içindeki simgeleri yeniden üretir.
+`python3 scripts/make-icons.py` (requires Pillow) regenerates the icons in `public/`.

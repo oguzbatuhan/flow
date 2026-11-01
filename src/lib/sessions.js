@@ -98,7 +98,7 @@ export function recentTags(sessions, limit = 6) {
   const seen = new Map();
   for (const s of sessions) {
     if (s.deleted || !s.tag || s.ms < MIN_SESSION_MS) continue;
-    const key = s.tag.toLocaleLowerCase("tr");
+    const key = s.tag.toLocaleLowerCase("en");
     const prev = seen.get(key);
     if (!prev || s.start > prev.start) seen.set(key, { tag: s.tag, start: s.start });
   }
