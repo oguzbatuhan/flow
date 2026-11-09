@@ -27,8 +27,8 @@ export default defineConfig({
         display: "standalone",
         display_override: ["standalone", "minimal-ui"],
         orientation: "portrait-primary",
-        background_color: "#0a0a0a",
-        theme_color: "#0a0a0a",
+        background_color: "#09090b",
+        theme_color: "#09090b",
         categories: ["productivity", "education"],
         icons: [
           { src: "icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },

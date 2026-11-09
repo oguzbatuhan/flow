@@ -1,18 +1,15 @@
 import { useEffect, useRef } from "react";
 import Controls from "./Controls.jsx";
 import Digits from "./Digits.jsx";
+import StatusPill from "./StatusPill.jsx";
 import { CloseIcon } from "./Icons.jsx";
+import { useI18n } from "../i18n.jsx";
 import { splitMs } from "../lib/time.js";
-
-const STATUS_TEXT = {
-  idle: "Ready",
-  running: "Running",
-  paused: "Paused",
-};
 
 // Full-screen big counter. Uses real fullscreen when the browser supports it,
 // otherwise (e.g. iPhone Safari) it opens as an overlay covering the page.
 export default function BigClock({ sw, wake, tag, onClose }) {
+  const { t } = useI18n();
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
   const enteredFullscreen = useRef(false);
@@ -54,18 +51,13 @@ export default function BigClock({ sw, wake, tag, onClose }) {
   const widthEm = chars * 0.62 + 0.1;
   const fontSize = "min(" + (84 / widthEm).toFixed(1) + "vw, 38vh)";
 
-  const dot =
-    sw.status === "running"
-      ? "bg-[var(--accent)]"
-      : sw.status === "paused"
-        ? "bg-[var(--warn)]"
-        : "bg-[var(--line-strong)]";
+  const running = sw.status === "running";
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Big counter"
+      aria-label={t("big.aria")}
       className="fixed inset-0 z-50 flex flex-col bg-[var(--bg)] text-[var(--fg)]"
       style={{
         paddingTop: "max(16px, env(safe-area-inset-top, 0px))",
@@ -74,35 +66,40 @@ export default function BigClock({ sw, wake, tag, onClose }) {
         paddingRight: "max(20px, env(safe-area-inset-right, 0px))",
       }}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="pt-2">
-          <p className="flex items-center gap-2 text-sm text-[var(--muted)]">
-            <span className={"h-1.5 w-1.5 rounded-full " + dot} aria-hidden="true"></span>
-            <span role="status">{STATUS_TEXT[sw.status]}</span>
-          </p>
-          <p className="mt-1 text-xs text-[var(--muted)]">
-            {wake.supported
-              ? wake.held
-                ? "Screen stays on"
-                : "Waiting for screen lock"
-              : "This browser can't keep the screen on"}
+      {/* Soft glow behind the counter while running */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 transition-opacity duration-700"
+        style={{
+          opacity: running ? 1 : 0,
+          background: "radial-gradient(60% 45% at 50% 50%, var(--accent-soft), transparent 70%)",
+        }}
+      />
+
+      <div className="relative flex items-start justify-between gap-4">
+        <div className="flex flex-col items-start gap-2 pt-1">
+          <StatusPill status={sw.status} />
+          <p className="px-1 text-xs text-[var(--muted-2)]">
+            {wake.supported ? (wake.held ? t("timer.screenOn") : t("big.waiting")) : t("big.noWake")}
           </p>
         </div>
-        <button type="button" onClick={onClose} aria-label="Close big screen" title="Close" className="icon-btn">
+        <button type="button" onClick={onClose} aria-label={t("big.close")} title={t("common.close")} className="icon-btn">
           <CloseIcon />
         </button>
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-center gap-4">
+      <div className="relative flex flex-1 flex-col items-center justify-center gap-5">
         {tag ? (
-          <p className="max-w-full truncate rounded-full bg-[var(--accent-soft)] px-3.5 py-1 text-sm font-medium text-[var(--accent)]">
+          <p className="max-w-full truncate rounded-full bg-[var(--accent-soft)] px-4 py-1.5 text-sm font-medium text-[var(--accent)]">
             {tag}
           </p>
         ) : null}
-        <Digits ms={sw.elapsed} running={sw.status === "running"} className="select-none" style={{ fontSize }} />
+        <Digits ms={sw.elapsed} running={running} className="select-none" style={{ fontSize }} />
       </div>
 
-      <Controls sw={sw} size="big" />
+      <div className="relative">
+        <Controls sw={sw} size="big" />
+      </div>
     </div>
   );
 }

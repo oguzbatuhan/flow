@@ -1,18 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import Controls from "./Controls.jsx";
 import Digits from "./Digits.jsx";
+import StatusPill from "./StatusPill.jsx";
 import { ExpandIcon, TagIcon } from "./Icons.jsx";
 import { MAX_TAG_LENGTH, cleanTag } from "../lib/sessions.js";
+import { useI18n } from "../i18n.jsx";
 
 const CONFIRM_MS = 5000;
 
-const STATUS_TEXT = {
-  idle: "Ready",
-  running: "Running",
-  paused: "Paused",
-};
-
+// The timer card on the main screen: status, big counter, tag, controls
 export default function TimerCard({ sw, wake, tag, onTag, tags, onBig }) {
+  const { t } = useI18n();
   const [confirming, setConfirming] = useState(false);
   const cancelRef = useRef(null);
 
@@ -28,29 +26,21 @@ export default function TimerCard({ sw, wake, tag, onTag, tags, onBig }) {
     if (sw.status !== "paused") setConfirming(false);
   }, [sw.status]);
 
-  const dot =
-    sw.status === "running"
-      ? "bg-[var(--accent)]"
-      : sw.status === "paused"
-        ? "bg-[var(--warn)]"
-        : "bg-[var(--line-strong)]";
+  const running = sw.status === "running";
 
   return (
-    <section aria-label="Flow" className="pb-5 text-center">
-      <div className="flex h-9 items-center justify-between">
-        <p className="flex items-center gap-2 text-sm text-[var(--muted)]">
-          <span
-            className={"h-1.5 w-1.5 rounded-full " + dot}
-            aria-hidden="true"
-          ></span>
-          <span role="status">{STATUS_TEXT[sw.status]}</span>
-        </p>
+    <section
+      aria-label={t("timer.aria")}
+      className={"day-card px-4 pb-5 pt-4 text-center sm:px-6 " + (running ? "day-card-today" : "")}
+    >
+      <div className="flex items-center justify-between">
+        <StatusPill status={sw.status} />
         <button
           type="button"
           onClick={onBig}
-          className="icon-btn"
-          aria-label="Big screen"
-          title="Big screen"
+          className="icon-btn -mr-2"
+          aria-label={t("timer.bigScreen")}
+          title={t("timer.bigScreen")}
         >
           <ExpandIcon />
         </button>
@@ -58,13 +48,13 @@ export default function TimerCard({ sw, wake, tag, onTag, tags, onBig }) {
 
       <Digits
         ms={sw.elapsed}
-        running={sw.status === "running"}
-        className="mb-5 mt-7"
-        style={{ fontSize: "clamp(3rem, 15vw, 5.5rem)" }}
+        running={running}
+        className="mb-6 mt-5"
+        style={{ fontSize: "clamp(3.25rem, 16vw, 5.75rem)" }}
       />
 
       <div className="mb-6">
-        <label className="mx-auto flex h-10 max-w-[15rem] items-center gap-2 rounded-full border border-[var(--line-strong)] bg-[var(--surface)] px-4 text-[var(--muted)] transition-colors focus-within:border-[var(--accent)]">
+        <label className="mx-auto flex h-11 max-w-[16rem] items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface-2)] px-4 text-[var(--muted)] transition-colors focus-within:border-[var(--accent)] hover:border-[var(--line-strong)]">
           <TagIcon />
           <input
             type="text"
@@ -74,33 +64,29 @@ export default function TimerCard({ sw, wake, tag, onTag, tags, onBig }) {
             maxLength={MAX_TAG_LENGTH}
             autoComplete="off"
             enterKeyHint="done"
-            aria-label="Tag"
-            placeholder="Tag (e.g. Math)"
-            className="min-w-0 flex-1 bg-transparent text-center text-[0.875rem] text-[var(--fg)] outline-none placeholder:text-[var(--muted)]"
+            aria-label={t("timer.tag")}
+            placeholder={t("timer.tagPlaceholder")}
+            className="min-w-0 flex-1 bg-transparent text-center text-base text-[var(--fg)] outline-none placeholder:text-[var(--muted-2)] sm:text-[0.9375rem]"
           />
         </label>
         {tags.length > 0 ? (
-          <div
-            className="mt-2.5 flex flex-wrap justify-center gap-1.5"
-            role="group"
-            aria-label="Recently used tags"
-          >
-            {tags.map((t) => {
-              const on = t.toLocaleLowerCase("en") === tag.trim().toLocaleLowerCase("en");
+          <div className="mt-3 flex flex-wrap justify-center gap-1.5" role="group" aria-label={t("timer.recentTags")}>
+            {tags.map((x) => {
+              const on = x.toLocaleLowerCase("en") === tag.trim().toLocaleLowerCase("en");
               return (
                 <button
-                  key={t}
+                  key={x}
                   type="button"
                   aria-pressed={on}
-                  onClick={() => onTag(on ? "" : t)}
+                  onClick={() => onTag(on ? "" : x)}
                   className={
-                    "h-7 max-w-[10rem] truncate rounded-full border px-3 text-xs font-medium transition-colors " +
+                    "h-8 max-w-[10rem] truncate rounded-full border px-3.5 text-xs font-medium transition-colors " +
                     (on
                       ? "border-transparent bg-[var(--accent-soft)] text-[var(--accent)]"
-                      : "border-[var(--line-strong)] text-[var(--muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)]")
+                      : "border-[var(--line)] text-[var(--muted)] hover:bg-[var(--hover)] hover:text-[var(--fg)]")
                   }
                 >
-                  {t}
+                  {x}
                 </button>
               );
             })}
@@ -110,48 +96,28 @@ export default function TimerCard({ sw, wake, tag, onTag, tags, onBig }) {
 
       <Controls sw={sw} />
 
-      <div className="mt-5 flex min-h-8 items-center justify-center gap-2 text-[0.8125rem] text-[var(--muted)]">
+      <div className="mt-4 flex min-h-8 items-center justify-center gap-2 text-[0.8125rem] text-[var(--muted)]">
         {sw.status === "paused" ? (
           confirming ? (
             <>
-              <span>Discard without saving?</span>
-              <button
-                ref={cancelRef}
-                type="button"
-                onClick={() => setConfirming(false)}
-                className="btn btn-ghost btn-sm"
-              >
-                Cancel
+              <span>{t("timer.discardQ")}</span>
+              <button ref={cancelRef} type="button" onClick={() => setConfirming(false)} className="btn btn-ghost btn-sm">
+                {t("common.cancel")}
               </button>
-              <button
-                type="button"
-                onClick={sw.discard}
-                className="btn btn-warn btn-sm"
-              >
-                Discard
+              <button type="button" onClick={sw.discard} className="btn btn-warn btn-sm">
+                {t("timer.discard")}
               </button>
             </>
           ) : (
-            <button
-              type="button"
-              onClick={() => setConfirming(true)}
-              className="link-btn"
-            >
-              Discard without saving
+            <button type="button" onClick={() => setConfirming(true)} className="link-btn">
+              {t("timer.discardLink")}
             </button>
           )
-        ) : sw.status === "running" ? (
+        ) : running ? (
           wake.supported ? (
-            <span>
-              {wake.held
-                ? "Screen stays on"
-                : "Keep this page open so the screen stays on"}
-            </span>
+            <span>{wake.held ? t("timer.screenOn") : t("timer.keepOpen")}</span>
           ) : (
-            <span className="text-[var(--warn)]">
-              This browser can't keep the screen on. Increase your phone's
-              screen timeout.
-            </span>
+            <span className="text-[var(--warn)]">{t("timer.noWake")}</span>
           )
         ) : null}
       </div>

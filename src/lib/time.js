@@ -1,3 +1,5 @@
+import { getLocale, t } from "./i18n.js";
+
 // Sessions shorter than one minute are not recorded (accidental starts)
 export const MIN_SESSION_MS = 60000;
 
@@ -17,21 +19,23 @@ export function clockMS(ms) {
   return pad(m) + ":" + pad(s);
 }
 
-// For a session row: "50 min 12 sec", "50 min", "40 sec", "185 min"
+// For a session row: "50 min 12 sec", "50 min", "40 sec", "185 min" (Turkish: "50 dk 12 sn")
 export function humanMS(ms) {
   const { m, s } = splitMs(ms);
-  if (m === 0) return s + " sec";
-  return s === 0 ? m + " min" : m + " min " + s + " sec";
+  if (m === 0) return s + " " + t("time.sec");
+  return s === 0 ? m + " " + t("time.min") : m + " " + t("time.min") + " " + s + " " + t("time.sec");
 }
 
-// For the day total, whole hours + remaining minutes: "2 h 15 min", "2 h", "45 min", "0 min"
+// For the day total, whole hours + remaining minutes: "2 h 15 min", "2 h", "45 min", "0 min" (Turkish: "2 sa 15 dk")
 export function human(ms) {
   const total = minutesOf(ms);
   const h = Math.floor(total / 60);
   const m = total % 60;
-  if (h === 0) return m + " min";
-  return m === 0 ? h + " h" : h + " h " + m + " min";
+  const min = t("time.min");
+  if (h === 0) return m + " " + min;
+  const hour = t("time.hour");
+  return m === 0 ? h + " " + hour : h + " " + hour + " " + m + " " + min;
 }
 
 export const hourMinute = (ts) =>
-  new Date(ts).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+  new Date(ts).toLocaleTimeString(getLocale(), { hour: "2-digit", minute: "2-digit" });

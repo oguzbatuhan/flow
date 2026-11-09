@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   AuthError,
+  ConflictError,
+  TextError,
   cloudConfigured,
   downloadData,
   onAuthChange,
@@ -11,9 +13,12 @@ import {
 } from "../lib/supabase.js";
 import { mergeSessions, normalizeSessions, sameSessions, sortById } from "../lib/sessions.js";
 
+const MAX_CONFLICT_RETRIES = 3;
+
 const FLAG_KEY = "flow-cloud-connected";
 const DEBOUNCE_MS = 1200;
 const FOCUS_SYNC_MS = 15000;
+const POLL_MS = 30000; // while the page is visible, check for changes from other devices
 
 const readFlag = () => {
   try {
@@ -29,13 +34,16 @@ const writeFlag = (on) => {
   } catch {}
 };
 
+// What the menu shows for a failure: { key, params } (translated when shown) or { text } (a message from the server)
+const errorInfo = (e) => (e instanceof TextError ? { key: e.key, params: e.params } : e?.message ? { text: e.message } : { key: "err.unknown" });
+
 // status: "off" | "syncing" | "synced" | "needs-auth" | "error"
 export function useCloudSync(sessions, setSessions) {
   const initiallyConnected = cloudConfigured && readFlag();
   const [connected, setConnected] = useState(initiallyConnected);
   const [status, setStatus] = useState(initiallyConnected ? "syncing" : "off");
   const [lastSynced, setLastSynced] = useState(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(null);
   const [email, setEmail] = useState("");
 
   const sessionsRef = useRef(sessions);
@@ -59,30 +67,37 @@ export function useCloudSync(sessions, setSessions) {
     try {
       const user = await requireUser();
       setEmail(user.email || "");
-      const remote = await downloadData();
-      const remoteSessions = normalizeSessions(remote?.sessions);
-      const local = sessionsRef.current;
-      const merged = mergeSessions(local, remoteSessions);
+      // Download, merge, upload. If another device saved in between, the upload is refused (ConflictError):
+      // start over with the newer copy, so nothing either device changed is lost.
+      for (let attempt = 0; ; attempt++) {
+        const { data: remote, version } = await downloadData();
+        const remoteSessions = normalizeSessions(remote?.sessions);
+        const local = sessionsRef.current;
+        const merged = mergeSessions(local, remoteSessions);
 
-      if (!sameSessions(sortById(local), merged)) {
-        skipNext.current = true;
-        setSessions(merged);
-      }
-      if (!remote || !sameSessions(sortById(remoteSessions), merged)) {
-        await uploadData({ version: 1, sessions: merged });
+        if (!sameSessions(sortById(local), merged)) {
+          skipNext.current = true;
+          setSessions(merged);
+        }
+        // Nothing to upload when the backup already holds exactly the merged data
+        if (remote && sameSessions(sortById(remoteSessions), merged)) break;
+        try {
+          await uploadData({ version: 1, sessions: merged }, version);
+          break;
+        } catch (e) {
+          if (!(e instanceof ConflictError) || attempt >= MAX_CONFLICT_RETRIES) throw e;
+        }
       }
       setStatus("synced");
       setLastSynced(Date.now());
-      setError("");
+      setError(null);
     } catch (e) {
       if (e instanceof AuthError) {
         setStatus("needs-auth");
       } else {
         setStatus("error");
         const offline = !navigator.onLine || e instanceof TypeError;
-        setError(
-          offline ? "No internet connection; will retry when it's back." : e.message || "Unknown error"
-        );
+        setError(offline ? { key: "err.offline" } : errorInfo(e));
       }
     } finally {
       running.current = false;
@@ -113,18 +128,21 @@ export function useCloudSync(sessions, setSessions) {
 
   // If the session is lost (signed out elsewhere, refresh token revoked) ask to reconnect
   useEffect(() => {
-    if (!cloudConfigured) return;
+    if (!cloudConfigured || !connected) return;
     return onAuthChange((event) => {
       if (event === "SIGNED_OUT" && connectedRef.current) {
         setStatus("needs-auth");
       }
     });
-  }, []);
+  }, [connected]);
 
-  // Pull changes from other devices when returning to the tab
+  // Pull changes from other devices when returning to the tab / app, and every POLL_MS while it stays visible
+  // (a tab left open on a desktop never fires "visibilitychange", so it would never see a record added on the phone).
+  // Push right away when the page is hidden or frozen: phones suspend the debounce timer, so a change made just
+  // before locking the screen would otherwise wait until the app is opened again.
   useEffect(() => {
     if (!cloudConfigured) return;
-    const onVisible = () => {
+    const pullIfStale = () => {
       if (
         document.visibilityState === "visible" &&
         connectedRef.current &&
@@ -133,21 +151,36 @@ export function useCloudSync(sessions, setSessions) {
         run();
       }
     };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") pullIfStale();
+      else if (connectedRef.current) run(); // push pending changes before the page is suspended
+    };
+    const onPageHide = () => {
+      if (connectedRef.current) run();
+    };
     // Push pending changes when the connection returns
     const onOnline = () => {
       if (connectedRef.current) run();
     };
-    document.addEventListener("visibilitychange", onVisible);
+    const poll = setInterval(pullIfStale, POLL_MS);
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", pullIfStale);
+    window.addEventListener("pageshow", pullIfStale);
+    window.addEventListener("pagehide", onPageHide);
     window.addEventListener("online", onOnline);
     return () => {
-      document.removeEventListener("visibilitychange", onVisible);
+      clearInterval(poll);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", pullIfStale);
+      window.removeEventListener("pageshow", pullIfStale);
+      window.removeEventListener("pagehide", onPageHide);
       window.removeEventListener("online", onOnline);
     };
   }, [run]);
 
   // Redirects to Google. The flag is written first so the app syncs automatically when it comes back.
   const connect = useCallback(async () => {
-    setError("");
+    setError(null);
     setStatus("syncing");
     writeFlag(true);
     try {
@@ -155,7 +188,7 @@ export function useCloudSync(sessions, setSessions) {
     } catch (e) {
       writeFlag(connectedRef.current);
       setStatus(connectedRef.current ? "needs-auth" : "off");
-      setError(e.message || "Could not start sign-in");
+      setError(e instanceof TextError || e?.message ? errorInfo(e) : { key: "err.signInStart" });
     }
   }, []);
 
@@ -164,7 +197,7 @@ export function useCloudSync(sessions, setSessions) {
     writeFlag(false);
     setConnected(false);
     setStatus("off");
-    setError("");
+    setError(null);
     setEmail("");
     await signOut();
   }, []);

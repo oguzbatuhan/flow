@@ -11,6 +11,7 @@ A study-time counter built with React + Tailwind CSS (user-facing name **Flow**,
 - **History drawer.** Only today is shown on the main screen; past days are hidden behind a small **History** button. On a phone the button opens a bottom sheet, on a wide screen a panel from the right. Inside, days are listed newest to oldest, split by month; only the newest day starts open and the others are a single row (day and total time). For days older than 30 there is an "Older days" button. `Esc`, ✕ or tapping outside closes it.
 - **Tag.** In the field under the counter, type what you are working on (e.g. Math). Recently used tags can be picked with one tap; the tag is stored with the record.
 - **Deleting.** Every record has a trash button, and deleting asks for confirmation first.
+- **Language.** English and Turkish, same as the Task app: the `EN`/`TR` button at the top right switches the language (the browser language is used the first time). Texts live in `src/lib/i18n.js`; dates, day names, durations (`1 sa 25 dk`) and error messages follow the language. `tests/i18n.test.js` checks that both languages have the same keys.
 - **Cloud sync.** Sign in with Google; records are written to the shared `app_backups` table in Supabase as the row `app = flow`.
 
 ## Running locally
@@ -46,7 +47,7 @@ The site is published at `https://oguzbatuhan.github.io/<repo-name>/`. In Chrome
 
 ## Design
 
-The typeface is Geist and ships with the app (it does not connect to Google Fonts, so it looks the same offline). Colors and button styles come from the tokens in `src/index.css`; light and dark themes are automatic.
+The look and layout follow the Task app: dark theme with an indigo accent, a header with the date, a large "Today" title and quiet icon buttons at the top right (language, history, cloud backup), rounded cards, and the same bottom-sheet / side-panel history drawer. The typeface is Geist and ships with the app (it does not connect to Google Fonts, so it looks the same offline). Colors, radii and button styles come from the tokens in `src/index.css`. The sync code (`useCloudSync`, `lib/supabase.js`) is the same as in Task: it detects edits made on another device and merges instead of overwriting.
 
 ## Icons
 
